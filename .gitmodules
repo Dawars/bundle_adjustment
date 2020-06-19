@@ -1,0 +1,12 @@
+[submodule "libs/Sophus"]
+	path = libs/Sophus
+	url = git@github.com:strasdat/Sophus.git
+[submodule "libs/ceres-solver"]
+	path = libs/ceres-solver
+	url = git@github.com:ceres-solver/ceres-solver.git
+[submodule "libs/opencv"]
+	path = libs/opencv
+	url = git@github.com:opencv/opencv.git
+[submodule "libs/eigen"]
+	path = libs/eigen
+	url = git@gitlab.com:libeigen/eigen.git
