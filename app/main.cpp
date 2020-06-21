@@ -3,12 +3,17 @@
 //
 #include <iostream>
 
+#include "harris/BundleAdjustment.h"
 #include "harris/BalDataloader.h"
 
 
 int main(){
     BalDataloader data("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/bal/ladybug/problem-49-7776-pre.txt");
 
+    BundleAdjustment ba{data};
+
+    ba.createProblem();
+    ba.solve();
 
     return 0;
 }
