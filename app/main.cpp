@@ -3,8 +3,8 @@
 //
 #include <iostream>
 
-#include "harris/BundleAdjustment.h"
-#include "harris/BalDataloader.h"
+#include "bundleadjust/BundleAdjustment.h"
+#include "bundleadjust/BalDataloader.h"
 
 
 int main(){

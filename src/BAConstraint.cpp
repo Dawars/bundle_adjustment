@@ -5,7 +5,7 @@
 #include <ceres/rotation.h>
 #include <Eigen/Dense>
 
-#include "harris/BAConstraint.h"
+#include "bundleadjust/BAConstraint.h"
 
 BAConstraint::BAConstraint(const Eigen::Vector3f& observation, const Camera& camera) :
         observation{ observation },

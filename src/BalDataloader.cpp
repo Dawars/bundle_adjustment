@@ -3,7 +3,7 @@
 //
 #include <fstream>
 
-#include "./harris/BalDataloader.h"
+#include "./bundleadjust/BalDataloader.h"
 
 BalDataloader::BalDataloader(std::string path) {
 //    <num_cameras> <num_points> <num_observations>

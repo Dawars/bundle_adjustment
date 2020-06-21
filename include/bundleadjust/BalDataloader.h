@@ -11,6 +11,24 @@ struct Camera {
     float R[3];
     float t[3];
     float f, k1, k2;
+//
+//    Eigen::Vector2f undistort(Eigen::Vector2f observation) const {
+////        r(p) = 1.0 + k1 * ||p||^2 + k2 * ||p||^4.
+//
+//        float p2 = observation.squaredNorm();
+//        float p4 = p2 * p2;
+//        return 1 + k1 * p2 + k2 * p4;
+//    }
+
+//    Eigen::Matrix3f projectionMatrix() const {
+//
+//        // camera space, axis goes through "center of image"
+//        Eigen::Matrix3f proj;
+//        proj << f, 0., 0.,
+//                0., f, 0.
+//                0., 0., 1.;
+//        return proj;
+//    }
 };
 
 /**

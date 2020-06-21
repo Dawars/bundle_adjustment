@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1...3.16)
-project(Harris VERSION 0.1 DESCRIPTION "Harris corner detection lib" LANGUAGES CXX)
+project(BundleAdjustment VERSION 0.1 DESCRIPTION "BundleAdjustment project for 3D Reconstruction" LANGUAGES CXX)
 
 find_package(OpenMP)
 find_package(OpenCV REQUIRED)

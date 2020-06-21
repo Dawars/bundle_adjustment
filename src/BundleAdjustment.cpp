@@ -2,8 +2,8 @@
 // Created by Komorowicz David on 2020. 06. 20..
 //
 
-#include "harris/BundleAdjustment.h"
-#include "harris/BAConstraint.h"
+#include "bundleadjust/BundleAdjustment.h"
+#include "bundleadjust/BAConstraint.h"
 
 BundleAdjustment::BundleAdjustment(const BalDataloader &dataset) : dataset(dataset) {
 //todo maybe init with data from point matching
