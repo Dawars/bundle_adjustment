@@ -21,7 +21,8 @@ BalDataloader::BalDataloader(std::string path) {
 
     file >> num_camera >> num_points >> num_observations;
 
-    cam_obs.resize(num_camera);
+    obs_cam.resize(num_observations);
+    obs_point.resize(num_observations);
     observations.resize(num_observations);
 
     for (int i = 0; i < num_observations; ++i) {
@@ -29,9 +30,9 @@ BalDataloader::BalDataloader(std::string path) {
         float x, y; // 2D image coordinates
         file >> cam_index >> point_index >> x >> y;
 
-        cam_obs[cam_index].insert(i);
-
         observations[i] = std::pair<float, float>(x, y);
+        obs_cam[i] = cam_index;
+        obs_point[i] = point_index;
     }
 
     std::vector<Camera> cameras;
