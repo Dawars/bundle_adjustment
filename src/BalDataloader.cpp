@@ -35,7 +35,6 @@ BalDataloader::BalDataloader(std::string path) {
         obs_point[i] = point_index;
     }
 
-    std::vector<Camera> cameras;
     cameras.resize(num_camera);
 
     for (int i = 0; i < num_camera; ++i) {
