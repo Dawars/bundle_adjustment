@@ -31,7 +31,7 @@ void BundleAdjustment::createProblem() {
 
         Eigen::Vector3f obs = {dataset.observations[i].first, dataset.observations[i].second, 1};
 
-        auto cost_function = BAConstraint::create(obs, dataset.cameras[i]);
+        auto cost_function = BAConstraint::create(obs, dataset.cameras[camIndex]);
 
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
