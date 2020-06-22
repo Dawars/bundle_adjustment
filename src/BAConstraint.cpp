@@ -25,8 +25,7 @@ bool BAConstraint::operator()(const T *const point, const T *const rot, const T 
     Eigen::Map<const Eigen::Matrix<T, 3, 1> > Prot(p);
     Eigen::Vector3<T> Pcam = Prot + t;
 
-    // fixme 0 division with this initialization
-    Eigen::Vector3<T> Pimg = -Pcam / Pcam(2); // z division, - because of camera model in BAL
+    Eigen::Vector3<T> Pimg = -Pcam / Pcam(2); // z division, minus because of camera model in BAL
     T r2 = Pimg.topRows(2).squaredNorm();
     T distortion = T(1) + r2 * (k1 + r2 * k2);
 

@@ -13,7 +13,7 @@ BundleAdjustment::BundleAdjustment(const BalDataloader &dataset) : dataset(datas
 
     std::fill_n(R, dataset.num_camera * 3, 0);
     std::fill_n(T, dataset.num_camera * 3, 0);
-    std::fill_n(X, dataset.num_points * 3, 0);
+    std::fill_n(X, dataset.num_points * 3, 1);
 }
 
 BundleAdjustment::~BundleAdjustment() {
