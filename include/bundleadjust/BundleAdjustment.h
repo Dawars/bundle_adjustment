@@ -11,6 +11,8 @@
 class BundleAdjustment {
 public:
     BundleAdjustment(const BalDataloader& dataset);
+    virtual ~BundleAdjustment();
+
     void createProblem();
     void solve();
 

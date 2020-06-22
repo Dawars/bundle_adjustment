@@ -11,6 +11,15 @@ BundleAdjustment::BundleAdjustment(const BalDataloader &dataset) : dataset(datas
     T = new double[dataset.num_camera * 3];
     X = new double[dataset.num_points * 3]; // reconstructed 3D points
 
+    std::fill_n(R, dataset.num_camera * 3, 0);
+    std::fill_n(T, dataset.num_camera * 3, 0);
+    std::fill_n(X, dataset.num_points * 3, 0);
+}
+
+BundleAdjustment::~BundleAdjustment() {
+    delete[] R;
+    delete[] T;
+    delete[] X;
 }
 
 void BundleAdjustment::createProblem() {
