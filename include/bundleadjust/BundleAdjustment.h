@@ -20,6 +20,7 @@ public:
     double* getTranslation(size_t cameraIndex);
     double* getPoint(size_t pointIndex);
 
+    void writeMesh(std::string filename);
 private:
     ceres::Problem problem;
 

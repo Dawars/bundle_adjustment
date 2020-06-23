@@ -1,6 +1,7 @@
 //
 // Created by Komorowicz David on 2020. 06. 20..
 //
+#include <fstream>
 
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BAConstraint.h"
@@ -59,7 +60,7 @@ void BundleAdjustment::configureSolver(ceres::Solver::Options &options) {
     options.use_nonmonotonic_steps = false;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 1;
+    options.max_num_iterations = 10;
     options.num_threads = 4;
 }
 
@@ -73,5 +74,20 @@ double *BundleAdjustment::getTranslation(size_t cameraIndex) {
 
 double *BundleAdjustment::getPoint(size_t pointIndex) {
     return &X[pointIndex * 3];
+}
+
+void BundleAdjustment::writeMesh(std::string filename) {
+
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        file << "OFF" << std::endl;
+        file << dataset.num_points << " 0 0" << std::endl;
+
+        for (int i = 0; i < dataset.num_points; ++i) {
+            auto point = getPoint(i);
+
+            file << point[0] << " " << point[1] << " " << point[2] << std::endl;
+        }
+    }
 }
 
