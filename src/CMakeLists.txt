@@ -4,7 +4,17 @@ cmake_minimum_required(VERSION 3.1...3.16)
 file(GLOB HEADER_LIST CONFIGURE_DEPENDS "${BundleAdjustment_SOURCE_DIR}/include/bundleadjust/*.h")
 #set(HEADER_LIST "${BundleAdjustment_SOURCE_DIR}/include/harris/harris.h")
 
-add_library(BundleAdjustment ${HEADER_LIST} BalDataloader.cpp BundleAdjustment.cpp BAConstraint.cpp)
+add_library(BundleAdjustment ${HEADER_LIST}
+        BalDataloader.cpp
+        BundleAdjustment.cpp
+        BAConstraint.cpp
+        KinectDataloader.cpp
+        VirtualSensor.cpp
+        detector/FeatureDetector.cpp
+        detector/HarrisDetector.cpp
+        detector/ShiTomasiDetector.cpp
+        detector/SiftDetector.cpp
+        )
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
@@ -16,5 +26,6 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 target_link_libraries(BundleAdjustment PUBLIC Ceres::ceres)
-#target_link_libraries(BundleAdjustment PRIVATE opencv_core sophus)
-#target_link_libraries(BundleAdjustment PRIVATE "${TORCH_LIBRARIES}")
+target_link_libraries(BundleAdjustment PRIVATE sophus)
+target_link_libraries(BundleAdjustment PRIVATE opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_xfeatures2d)
+target_link_libraries(BundleAdjustment PRIVATE "${TORCH_LIBRARIES}")
