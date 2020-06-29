@@ -57,7 +57,7 @@ public:
     unsigned int GetCurrentFrameCnt();
 
     // get current color data
-    cv::Mat GetColorRGBX() const;
+    cv::Mat GetColor() const;
 
     // get current depth data
     cv::Mat GetDepth() const;

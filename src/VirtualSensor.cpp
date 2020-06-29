@@ -93,7 +93,7 @@ unsigned int VirtualSensor::GetCurrentFrameCnt() {
 }
 
 // get current color data
-cv::Mat VirtualSensor::GetColorRGBX() const {
+cv::Mat VirtualSensor::GetColor() const {
     return rgbImage;
 }
 

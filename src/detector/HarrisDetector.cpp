@@ -1,14 +1,14 @@
 //
-// Created by Komorowicz David on 2020. 06. 25..
+// Created by Komorowicz David on 2020. 06. 29..
 //
 
-#include "bundleadjust/FeatureDetector.h"
+#include "bundleadjust/HarrisDetector.h"
 
-std::vector<Eigen::Vector2f> FeatureDetector::getFeatures(cv::Mat &color, cv::Mat& depth) {
-    int blockSize = 2;
-    int apertureSize = 3;
-    double k = 0.04;
-    int thresh = 200;
+std::vector<cv::KeyPoint> HarrisDetector::getFeatures(cv::Mat &color, cv::Mat& depth, std::unordered_map<std::string, float> params) {
+    int blockSize = params["blockSize"];
+    int apertureSize = params["apertureSize"];
+    double k = params["k"];
+    int thresh = params["thresh"];
 
     cv::Mat intensity;
     cvtColor(color, intensity, cv::COLOR_RGB2GRAY);
@@ -22,21 +22,18 @@ std::vector<Eigen::Vector2f> FeatureDetector::getFeatures(cv::Mat &color, cv::Ma
     cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
     cv::convertScaleAbs(dst_norm, dst_norm_scaled);
 
-    std::vector<Eigen::Vector2f> featurePoints;
+    std::vector<cv::Point2f> corners;
     for (int i = 0; i < dst_norm.rows; i++) {
         for (int j = 0; j < dst_norm.cols; j++) {
             if ((int) dst_norm.at<float>(i, j) > thresh) {
-                featurePoints.push_back({i,j});
+                corners.push_back(cv::Point2f(i,j));
             }
         }
     }
     // todo subpixel
-    // todo skip blurry images no features
+
+    std::vector<cv::KeyPoint> featurePoints;
+    cv::KeyPoint::convert(corners, featurePoints, 10.0);
+
     return featurePoints;
-}
-
-cv::Mat FeatureDetector::getDescriptors(cv::Mat &color, cv::Mat &gray, std::vector<Eigen::Vector2f> &features) {
-
-
-    return cv::Mat();
 }

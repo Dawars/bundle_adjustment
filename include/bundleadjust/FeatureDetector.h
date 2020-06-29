@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <string>
+
 #include <opencv2/opencv.hpp>
 
 class FeatureDetector {
 public:
-    std::vector<Eigen::Vector2f> getFeatures(cv::Mat &color, cv::Mat &gray);
+    virtual std::vector<cv::KeyPoint> getFeatures(cv::Mat &color, cv::Mat &gray, std::unordered_map<std::string, float> params = {}) = 0;
 
-    cv::Mat getDescriptors(cv::Mat &color, cv::Mat &gray, std::vector<Eigen::Vector2f> &features);
-
+    virtual ~FeatureDetector() { };
 };
 
