@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.1...3.16)
 file(GLOB HEADER_LIST CONFIGURE_DEPENDS "${BundleAdjustment_SOURCE_DIR}/include/bundleadjust/*.h")
 #set(HEADER_LIST "${BundleAdjustment_SOURCE_DIR}/include/harris/harris.h")
 
-add_library(BundleAdjustment ${HEADER_LIST} BalDataloader.cpp BundleAdjustment.cpp BAConstraint.cpp KinectDataloader.cpp VirtualSensor.cpp)
+add_library(BundleAdjustment ${HEADER_LIST} BalDataloader.cpp BundleAdjustment.cpp BAConstraint.cpp KinectDataloader.cpp VirtualSensor.cpp FeatureDetector.cpp)
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
