@@ -37,9 +37,9 @@ void BundleAdjustment::createProblem() {
 
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
+                                 getPoint(pointIndex),
                                  getRotation(camIndex),
-                                 getTranslation(camIndex),
-                                 getPoint(pointIndex)
+                                 getTranslation(camIndex)
         );
     }
 }

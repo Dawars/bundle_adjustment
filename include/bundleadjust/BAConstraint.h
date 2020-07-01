@@ -25,8 +25,7 @@ public:
 
 protected:
     const Camera& camera; // use only intrinsics
-    const Eigen::Vector3f& observation;
-
+    const Eigen::Vector3f observation;
 };
 
 
