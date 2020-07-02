@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+
+# Andrew
+.vscode
+build/
+data/
+output/

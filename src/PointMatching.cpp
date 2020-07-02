@@ -8,9 +8,18 @@
 using namespace cv;
 using namespace cv::xfeatures2d;
 
+void OnlinePointMatcher::configure_matcher(const Ptr<FeatureDetector> detector,
+                                           const Ptr<DescriptorExtractor> extractor,
+                                           const Ptr<DescriptorMatcher> matcher) {
+
+    this->detector = detector;
+    this->extractor = extractor;
+    this->matcher = matcher;
+}
+
 OnlinePointMatcher::OnlinePointMatcher() {
     detector = SIFT::create(); // TODO: Make configurable
-    descriptorExtractor = SIFT::create(); // TODO: Make configurable
+    extractor = SIFT::create(); // TODO: Make configurable
     matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); // TODO: Make configurable
 }
 
@@ -20,7 +29,7 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
     std::vector<KeyPoint> current_frame_keypoints;
     Mat current_frame_descriptors;
     detector->detect(currentFrame, current_frame_keypoints);
-    descriptorExtractor->compute(currentFrame, current_frame_keypoints, current_frame_descriptors);
+    extractor->compute(currentFrame, current_frame_keypoints, current_frame_descriptors);
 
     this->keypoints.push_back(current_frame_keypoints);
     this->descriptors.push_back(current_frame_descriptors);
