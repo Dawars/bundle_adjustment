@@ -12,8 +12,10 @@ using namespace cv::xfeatures2d;
 
 class OnlinePointMatcher {
     Ptr<FeatureDetector> detector;
+    Ptr<DescriptorExtractor> extractor;
     Ptr<DescriptorMatcher> matcher;
-    Ptr<DescriptorExtractor> descriptorExtractor;
+
+    void mask_matches_by_train_img_idx(const std::vector<DMatch> & matches, int train_img_idx, std::vector<char> & mask);
 
 public:
     std::vector<Mat> images;
@@ -21,6 +23,8 @@ public:
     Mat current_frame;
     std::vector<std::string> image_paths;
 
+    void configure_matcher(const Ptr<FeatureDetector> detector, const Ptr<DescriptorExtractor> extractor, 
+                           const Ptr<DescriptorMatcher> matcher);
 
     void read_images(const std::string dir);
 
@@ -33,6 +37,4 @@ public:
                                 const std::vector<DMatch>& matches, 
                                 const std::vector<std::string> & previous_frames_names, 
                                 const std::string & output_dir);
-
-    void mask_matches_by_train_img_idx(const std::vector<DMatch> & matches, int train_img_idx, std::vector<char> & mask);
 };

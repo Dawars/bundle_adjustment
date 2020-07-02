@@ -16,6 +16,15 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
     return res;
 }
 
+void OnlinePointMatcher::configure_matcher(const Ptr<FeatureDetector> detector, 
+                                           const Ptr<DescriptorExtractor> extractor, 
+                                           const Ptr<DescriptorMatcher> matcher) {
+
+    this->detector = detector;
+    this->extractor = extractor;
+    this->matcher = matcher;
+}
+
 void OnlinePointMatcher::read_images(const std::string dir) {
     glob(dir, image_paths, false);
     size_t count = image_paths.size();
@@ -44,9 +53,9 @@ void OnlinePointMatcher::match_with_frame(const int frame_idx) {
         // Compute descriptors
         Mat current_frame_descriptors;
         std::vector<Mat> previous_frames_descriptors;
-        descriptorExtractor = SIFT::create(); // TODO: Make configurable
-        descriptorExtractor->compute(current_frame, current_frame_keypoints, current_frame_descriptors);
-        descriptorExtractor->compute(previous_frames, previous_frames_keypoints, previous_frames_descriptors);
+        extractor = SIFT::create(); // TODO: Make configurable
+        extractor->compute(current_frame, current_frame_keypoints, current_frame_descriptors);
+        extractor->compute(previous_frames, previous_frames_keypoints, previous_frames_descriptors);
 
         // Match points 
         matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); // TODO: Make configurable

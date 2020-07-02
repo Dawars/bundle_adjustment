@@ -10,8 +10,10 @@
 
 
 int main() {
-
     OnlinePointMatcher pm;
+
+    SIFT de;
+    
     pm.read_images("/home/andrew/repos/tum/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/rgb");
     pm.match_with_frame(4);
 
