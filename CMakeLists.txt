@@ -9,7 +9,7 @@ add_subdirectory(libs/ceres-solver)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-include(download_libtorch)
+#include(download_libtorch)
 #include(ExternalProject)
 #add_subdirectory(libs/pytorch)
 

@@ -2,6 +2,7 @@
 // Created by Komorowicz David on 2020. 06. 25..
 //
 
+#include "bundleadjust/PointMatching.h"
 #include "bundleadjust/KinectDataloader.h"
 #include "bundleadjust/HarrisDetector.h"
 #include "bundleadjust/ShiTomasiDetector.h"
@@ -27,11 +28,13 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
             {"thresh",       200}
     };
 
-        SiftDetector detector;
+    SiftDetector detector;
 //    HarrisDetector detector;
 //    ShiTomasiDetector detector;
 
-    VirtualSensor sensor;
+    OnlinePointMatcher matcher;
+
+    VirtualSensor sensor{};
     sensor.Init(datasetDir);
 
     while (sensor.ProcessNextFrame()) {
@@ -40,9 +43,21 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
         // Feature Detection and Matching
         // https://docs.opencv.org/3.4/db/d27/tutorial_py_table_of_contents_feature2d.html
-        auto featurePoints = detector.getFeatures(color, depth, params);
+//        auto featurePoints = detector.getFeatures(color, depth, params);
 
-        visualize(color, featurePoints);
+//        visualize(color, featurePoints);
+
+        matcher.extractKeypoints(color);
+        // TODO: save depth and color values at feature points
 
     }
+
+    matcher.matchKeypoints();
+
+    // TODO: depth test
+
+    // TODO: visualize matches, images need to be stored in memory
+
+
+    // TODO: Save out data from matcher
 }

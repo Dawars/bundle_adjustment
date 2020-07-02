@@ -8,7 +8,7 @@
 
 // reads sensor files according to https://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
 
-VirtualSensor::VirtualSensor() : m_currentIdx(-1), m_increment(10) {
+VirtualSensor::VirtualSensor(int increment) : m_currentIdx(-1), m_increment(increment) {
 
 }
 

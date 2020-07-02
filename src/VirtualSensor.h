@@ -9,7 +9,7 @@
 
 
 template<typename T, unsigned int n, unsigned m>
-std::istream &operator>>(std::istream &in, Eigen::Matrix <T, n, m> &other) {
+std::istream &operator>>(std::istream &in, Eigen::Matrix<T, n, m> &other) {
     for (unsigned int i = 0; i < other.rows(); i++)
         for (unsigned int j = 0; j < other.cols(); j++)
             in >> other(i, j);
@@ -17,7 +17,7 @@ std::istream &operator>>(std::istream &in, Eigen::Matrix <T, n, m> &other) {
 }
 
 template<typename T, unsigned int n, unsigned m>
-std::ostream &operator<<(std::ostream &out, const Eigen::Matrix <T, n, m> &other) {
+std::ostream &operator<<(std::ostream &out, const Eigen::Matrix<T, n, m> &other) {
     std::fixed(out);
     for (int i = 0; i < other.rows(); i++) {
         out << other(i, 0);
@@ -30,13 +30,13 @@ std::ostream &operator<<(std::ostream &out, const Eigen::Matrix <T, n, m> &other
 }
 
 template<typename T>
-std::istream &operator>>(std::istream &in, Eigen::Quaternion <T> &other) {
+std::istream &operator>>(std::istream &in, Eigen::Quaternion<T> &other) {
     in >> other.x() >> other.y() >> other.z() >> other.w();
     return in;
 }
 
 template<typename T>
-std::ostream &operator<<(std::ostream &out, const Eigen::Quaternion <T> &other) {
+std::ostream &operator<<(std::ostream &out, const Eigen::Quaternion<T> &other) {
     std::fixed(out);
     out << other.x() << "\t" << other.y() << "\t" << other.z() << "\t" << other.w();
     return out;
@@ -46,7 +46,7 @@ std::ostream &operator<<(std::ostream &out, const Eigen::Quaternion <T> &other) 
 class VirtualSensor {
 public:
 
-    VirtualSensor();
+    VirtualSensor(int increment = 10);
 
     ~VirtualSensor();
 
@@ -86,9 +86,9 @@ public:
 private:
 
     bool
-    ReadFileList(const std::string &filename, std::vector <std::string> &result, std::vector<double> &timestamps);
+    ReadFileList(const std::string &filename, std::vector<std::string> &result, std::vector<double> &timestamps);
 
-    bool ReadTrajectoryFile(const std::string &filename, std::vector <Eigen::Matrix4f> &result,
+    bool ReadTrajectoryFile(const std::string &filename, std::vector<Eigen::Matrix4f> &result,
                             std::vector<double> &timestamps);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -121,14 +121,14 @@ private:
     // base dir
     std::string m_baseDir;
     // filenamelist depth
-    std::vector <std::string> m_filenameDepthImages;
+    std::vector<std::string> m_filenameDepthImages;
     std::vector<double> m_depthImagesTimeStamps;
     // filenamelist color
-    std::vector <std::string> m_filenameColorImages;
+    std::vector<std::string> m_filenameColorImages;
     std::vector<double> m_colorImagesTimeStamps;
 
     // trajectory
-    std::vector <Eigen::Matrix4f> m_trajectory;
+    std::vector<Eigen::Matrix4f> m_trajectory;
     std::vector<double> m_trajectoryTimeStamps;
 
 };
