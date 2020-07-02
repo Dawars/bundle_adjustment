@@ -6,24 +6,15 @@
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BalDataloader.h"
 #include "bundleadjust/KinectDataloader.h"
+#include "bundleadjust/PointMatching.h"
 
 
-int main(){
-//    BalDataloader data("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/bal/venice/problem-52-64053-pre.txt");
-//
-//    BundleAdjustment ba{data};
-//
-//    ba.createProblem();
-//    ba.solve();
-//
-//    ba.writeMesh("veniceGroundTruth.off");
-//    ba.writeCamerasMesh("veniceCameraGroundTruth.off");
+int main() {
 
+    OnlinePointMatcher pm;
+    pm.read_images("/home/andrew/repos/tum/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/rgb");
+    pm.match_with_frame(4);
 
-    ba.createProblem();
-    ba.solve();
-
-    KinectDataloader kinectDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
 
     return 0;
 }

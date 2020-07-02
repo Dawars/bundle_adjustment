@@ -10,6 +10,7 @@ add_library(BundleAdjustment ${HEADER_LIST}
         BAConstraint.cpp
         KinectDataloader.cpp
         VirtualSensor.cpp
+        PointMatching.cpp
         detector/FeatureDetector.cpp
         detector/HarrisDetector.cpp
         detector/ShiTomasiDetector.cpp
@@ -26,6 +27,7 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 target_link_libraries(BundleAdjustment PUBLIC Ceres::ceres)
-target_link_libraries(BundleAdjustment PRIVATE sophus)
+target_link_libraries(BundleAdjustment PUBLIC ${OpenCV_LIBS})
+#target_link_libraries(BundleAdjustment PRIVATE sophus)
 target_link_libraries(BundleAdjustment PRIVATE opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_xfeatures2d)
-target_link_libraries(BundleAdjustment PRIVATE "${TORCH_LIBRARIES}")
+#target_link_libraries(BundleAdjustment PRIVATE "${TORCH_LIBRARIES}")
