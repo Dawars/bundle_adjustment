@@ -16,6 +16,13 @@ add_library(BundleAdjustment ${HEADER_LIST}
         detector/SiftDetector.cpp
         )
 
+target_compile_features(BundleAdjustment PRIVATE cxx_std_17)
+target_compile_options(BundleAdjustment PRIVATE -Wall -Wextra -Werror
+        -Wno-error=unused-function
+        -Wno-error=unused-label
+        -Wno-error=unused-value
+        -Wno-error=unused-variable)
+
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
 target_include_directories(BundleAdjustment PRIVATE ../libs/eigen)

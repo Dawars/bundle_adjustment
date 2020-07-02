@@ -19,10 +19,6 @@ int main(){
 //    ba.writeMesh("veniceGroundTruth.off");
 //    ba.writeCamerasMesh("veniceCameraGroundTruth.off");
 
-
-    ba.createProblem();
-    ba.solve();
-
     KinectDataloader kinectDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
 
     return 0;

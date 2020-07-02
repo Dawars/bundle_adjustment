@@ -24,8 +24,8 @@ public:
     static ceres::CostFunction* create(const Eigen::Vector3f& observation, const Camera& camera);
 
 protected:
-    const Camera& camera; // use only intrinsics
     const Eigen::Vector3f observation;
+    const Camera& camera; // use only intrinsics
 };
 
 
