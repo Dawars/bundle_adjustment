@@ -21,7 +21,8 @@ target_compile_options(BundleAdjustment PRIVATE -Wall -Wextra -Werror
         -Wno-error=unused-function
         -Wno-error=unused-label
         -Wno-error=unused-value
-        -Wno-error=unused-variable)
+        -Wno-error=unused-variable
+        -Wno-error=unused-private-field)
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
