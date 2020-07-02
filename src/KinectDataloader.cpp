@@ -9,6 +9,12 @@
 #include "bundleadjust/SiftDetector.h"
 #include "VirtualSensor.h"
 
+
+#include "opencv2/features2d.hpp"
+#include "opencv2/xfeatures2d.hpp"
+
+using namespace cv::xfeatures2d;
+
 void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
 
     std::string name{"Detected corners"};
@@ -28,11 +34,15 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
             {"thresh",       200}
     };
 
-    SiftDetector detector;
+//    SiftDetector detector;
 //    HarrisDetector detector;
 //    ShiTomasiDetector detector;
 
-    OnlinePointMatcher matcher;
+    auto detector = SIFT::create(); // TODO: Extend and use FeatureDetector wrapper
+    auto extractor = SIFT::create();
+    auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+
+    OnlinePointMatcher correspondenceFinder{detector, extractor, matcher};
 
     VirtualSensor sensor{};
     sensor.Init(datasetDir);
@@ -47,12 +57,12 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
 //        visualize(color, featurePoints);
 
-        matcher.extractKeypoints(color);
+        correspondenceFinder.extractKeypoints(color);
         // TODO: save depth and color values at feature points
 
     }
 
-    matcher.matchKeypoints();
+    correspondenceFinder.matchKeypoints();
 
     // TODO: depth test
 

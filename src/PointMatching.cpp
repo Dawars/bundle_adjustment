@@ -2,26 +2,17 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/xfeatures2d.hpp>
 
-
 #include "bundleadjust/PointMatching.h"
 
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-void OnlinePointMatcher::configure_matcher(const Ptr<FeatureDetector> detector,
-                                           const Ptr<DescriptorExtractor> extractor,
-                                           const Ptr<DescriptorMatcher> matcher) {
-
-    this->detector = detector;
-    this->extractor = extractor;
-    this->matcher = matcher;
-}
-
-OnlinePointMatcher::OnlinePointMatcher() {
-    detector = SIFT::create(); // TODO: Make configurable
-    extractor = SIFT::create(); // TODO: Make configurable
-    matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); // TODO: Make configurable
-}
+OnlinePointMatcher::OnlinePointMatcher(const Ptr<cv::FeatureDetector> detector,
+                                       const Ptr<cv::DescriptorExtractor> extractor,
+                                       const Ptr<cv::DescriptorMatcher> matcher) :
+        detector(detector),
+        extractor(extractor),
+        matcher(matcher) {}
 
 void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 
@@ -34,7 +25,6 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
     this->keypoints.push_back(current_frame_keypoints);
     this->descriptors.push_back(current_frame_descriptors);
 
-    this->currentId++;
 }
 
 void OnlinePointMatcher::matchKeypoints() {
@@ -86,8 +76,6 @@ void OnlinePointMatcher::matchKeypoints() {
                 // 3d points correspond to flann train point ids
                 obs_point[totalPointsUntilFrame[frameId] + obs.queryIdx] = obs.trainIdx;
             }
-
-            // TODO: RANSAC
         }
     }
 }

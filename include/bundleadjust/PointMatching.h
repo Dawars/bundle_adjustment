@@ -18,18 +18,12 @@ class OnlinePointMatcher {
     std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
 
 public:
-    std::vector<Mat> images;
-    std::vector<DMatch> matches;
-    Mat current_frame;
-    std::vector<std::string> image_paths;
-
-    OnlinePointMatcher();
+    OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,
+                       const cv::Ptr<cv::DescriptorExtractor> extractor,
+                       const cv::Ptr<cv::DescriptorMatcher> matcher);
 
     void extractKeypoints(const cv::Mat currentFrame);
 
     void matchKeypoints();
-
-    void configure_matcher(const Ptr<FeatureDetector> detector, const Ptr<DescriptorExtractor> extractor,
-                           const Ptr<DescriptorMatcher> matcher);
 
 };
