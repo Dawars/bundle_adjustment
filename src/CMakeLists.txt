@@ -15,6 +15,7 @@ add_library(BundleAdjustment ${HEADER_LIST}
         detector/HarrisDetector.cpp
         detector/ShiTomasiDetector.cpp
         detector/SiftDetector.cpp
+        PointMatching.cpp
         )
 
 target_include_directories(BundleAdjustment PUBLIC ../include)

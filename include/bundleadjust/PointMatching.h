@@ -1,40 +1,29 @@
 #pragma once
 
 #include <iostream>
-#include "opencv2/core.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/features2d.hpp"
-#include "opencv2/xfeatures2d.hpp"
 
-using namespace cv;
-using namespace cv::xfeatures2d;
+#include <opencv2/opencv.hpp>
 
+#include "bundleadjust/FeatureDetector.h"
 
 class OnlinePointMatcher {
-    Ptr<FeatureDetector> detector;
-    Ptr<DescriptorExtractor> extractor;
-    Ptr<DescriptorMatcher> matcher;
+    cv::Ptr<cv::FeatureDetector> detector;
+    cv::Ptr<cv::DescriptorExtractor> extractor;
+    cv::Ptr<cv::DescriptorMatcher> matcher;
 
-    void mask_matches_by_train_img_idx(const std::vector<DMatch> & matches, int train_img_idx, std::vector<char> & mask);
+    std::vector<std::vector<cv::KeyPoint>> keypoints; // list of keypoints for every frame processed so far
+    std::vector<cv::Mat> descriptors;
+
+    std::vector<int> obs_cam; //  ith 2d point on jth camera
+    std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
 
 public:
-    std::vector<Mat> images;
-    std::vector<DMatch> matches;
-    Mat current_frame;
-    std::vector<std::string> image_paths;
+    OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,
+                       const cv::Ptr<cv::DescriptorExtractor> extractor,
+                       const cv::Ptr<cv::DescriptorMatcher> matcher);
 
-    void configure_matcher(const Ptr<FeatureDetector> detector, const Ptr<DescriptorExtractor> extractor, 
-                           const Ptr<DescriptorMatcher> matcher);
+    void extractKeypoints(const cv::Mat currentFrame);
 
-    void read_images(const std::string dir);
+    void matchKeypoints();
 
-    void match_with_frame(const int frame_idx);
-
-    void save_images_of_matches(const Mat & current_frame, 
-                                const std::vector<KeyPoint> & current_frame_keypoints, 
-                                const std::vector<Mat> & previous_frames, 
-                                const std::vector<std::vector<KeyPoint>> & previous_frames_keypoints, 
-                                const std::vector<DMatch>& matches, 
-                                const std::vector<std::string> & previous_frames_names, 
-                                const std::string & output_dir);
 };

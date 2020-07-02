@@ -1,117 +1,81 @@
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/xfeatures2d.hpp>
+
 #include "bundleadjust/PointMatching.h"
 
+using namespace cv;
+using namespace cv::xfeatures2d;
 
-std::vector<std::string> split(std::string s, std::string delimiter) {
-    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-    std::string token;
-    std::vector<std::string> res;
+OnlinePointMatcher::OnlinePointMatcher(const Ptr<cv::FeatureDetector> detector,
+                                       const Ptr<cv::DescriptorExtractor> extractor,
+                                       const Ptr<cv::DescriptorMatcher> matcher) :
+        detector(detector),
+        extractor(extractor),
+        matcher(matcher) {}
 
-    while ((pos_end = s.find (delimiter, pos_start)) != std::string::npos) {
-        token = s.substr (pos_start, pos_end - pos_start);
-        pos_start = pos_end + delim_len;
-        res.push_back (token);
+void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
+
+    // Detect keypoints
+    std::vector<KeyPoint> current_frame_keypoints;
+    Mat current_frame_descriptors;
+    detector->detect(currentFrame, current_frame_keypoints);
+    extractor->compute(currentFrame, current_frame_keypoints, current_frame_descriptors);
+
+    this->keypoints.push_back(current_frame_keypoints);
+    this->descriptors.push_back(current_frame_descriptors);
+
+}
+
+void OnlinePointMatcher::matchKeypoints() {
+
+    int num_frames = this->keypoints.size();
+    int totalPointsUntilFrame[num_frames];
+    int num_observations = 0;
+    for (size_t i = 0; i < num_frames; ++i) {
+        totalPointsUntilFrame[i] = num_observations; // excluding current frame
+
+        auto &kps = this->keypoints[i];
+        auto num_current_points = kps.size();
+        num_observations += num_current_points;
     }
 
-    res.push_back (s.substr (pos_start));
-    return res;
-}
-
-void OnlinePointMatcher::configure_matcher(const Ptr<FeatureDetector> detector, 
-                                           const Ptr<DescriptorExtractor> extractor, 
-                                           const Ptr<DescriptorMatcher> matcher) {
-
-    this->detector = detector;
-    this->extractor = extractor;
-    this->matcher = matcher;
-}
-
-void OnlinePointMatcher::read_images(const std::string dir) {
-    glob(dir, image_paths, false);
-    size_t count = image_paths.size();
-    for (size_t i=0; i<count; i++) {
-        images.push_back(imread(image_paths[i]));
+    // init index vectors
+    this->obs_point.resize(num_observations, -1);
+    this->obs_cam.resize(num_observations, -1);
+    for (size_t i = 0; i < num_frames; ++i) {
+        auto len = ((i == num_frames - 1) ? num_observations : totalPointsUntilFrame[i + 1]) - totalPointsUntilFrame[i];
+        std::fill_n(&this->obs_cam[totalPointsUntilFrame[i]], len, i);
     }
-}
 
-void OnlinePointMatcher::match_with_frame(const int frame_idx) {
-    current_frame = images[frame_idx];
+    // init matcher
+    matcher->add(descriptors); // add current descriptor to the matcher
+    matcher->train(); // train matcher on descriptors
 
-    for(size_t i=0; i<frame_idx; i++) {
-        std::vector<Mat>::const_iterator first_frame = images.begin();
-        std::vector<Mat>::const_iterator most_recent_frame = images.begin() + frame_idx - 1;
-        
-        std::vector<Mat> previous_frames(first_frame, most_recent_frame);
-        std::vector<std::vector<std::vector<DMatch>>> matching_pairs;
+    for (int frameId = 0; frameId < num_frames; ++frameId) {
 
-        // Detect keypoints
-        detector = SIFT::create(); // TODO: Make configurable
-        std::vector<KeyPoint> current_frame_keypoints;
-        std::vector<std::vector<KeyPoint>> previous_frames_keypoints;
-        detector->detect(current_frame, current_frame_keypoints);
-        detector->detect(previous_frames, previous_frames_keypoints);
+        auto &desc = descriptors[frameId];
 
-        // Compute descriptors
-        Mat current_frame_descriptors;
-        std::vector<Mat> previous_frames_descriptors;
-        extractor = SIFT::create(); // TODO: Make configurable
-        extractor->compute(current_frame, current_frame_keypoints, current_frame_descriptors);
-        extractor->compute(previous_frames, previous_frames_keypoints, previous_frames_descriptors);
+        std::vector<std::vector<cv::DMatch>> knn_matches; // mask not supported for flann
+        matcher->knnMatch(desc, knn_matches, 3, true); // 3 to skip 1st match with same frame
 
-        // Match points 
-        matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); // TODO: Make configurable
-        matches.resize(0);
-        matcher->add(previous_frames_descriptors);
-        matcher->train();
-        matcher->match(current_frame_descriptors, matches);
+        const float ratio_thresh = 0.7f; // todo param
 
-        // TODO: Filter for good points
-        // const float ratio_thresh = 0.7f;
-        // std::vector<DMatch> good_matches;
-        // for (size_t i = 0; i < matches.size(); i++)
-        // {
-        //     if (false)
-        //     {
-        //         good_matches.push_back(matches[i]);
-        //     }
-        // }
+        for (int i = 0; i < knn_matches.size(); ++i) {
+            std::vector<DMatch> &match = knn_matches[i];
 
-        // TODO: Rewrite for saving
-        // if (i == frame_idx - 1) {
-            
-        //     std::vector<std::string>::const_iterator first_name = image_paths.begin();
-        //     std::vector<std::string>::const_iterator last_name = image_paths.begin() + frame_idx - 1;
-        //     std::vector<std::string> previous_frames_names(first_name, last_name);
-            
+            int offset = 0;
+            if (match[0].imgIdx == frameId) { // closest point is same point on same image, skip
+                offset = 1;
+            }
 
-        //     save_images_of_matches(current_frame, current_frame_keypoints, previous_frames, previous_frames_keypoints, matches, previous_frames_names, "/home/andrew/repos/tum/bundle_adjustment/output");
-        // }
-    }
-}
+            // ratio test
+            if (match[offset + 0].distance < ratio_thresh * match[offset + 1].distance) {
 
-
-void OnlinePointMatcher::save_images_of_matches(const Mat & current_frame, const std::vector<KeyPoint> & current_frame_keypoints, const std::vector<Mat> & previous_frames, const std::vector<std::vector<KeyPoint>> & previous_frames_keypoints, const std::vector<DMatch>& matches, const std::vector<std::string> & previous_frames_names, const std::string & output_dir) {
-    Mat drawImg;
-    std::vector<char> mask;
-    for( size_t i = 0; i < previous_frames.size(); i++) {
-        std::cout << "her" << "\n";
-        if(!previous_frames[i].empty()) {
-            std::cout << "in" << "\n";
-            mask_matches_by_train_img_idx(matches, (int)i, mask );
-            drawMatches(current_frame, current_frame_keypoints, previous_frames[i], previous_frames_keypoints[i], matches, drawImg, Scalar(255, 0, 0), Scalar(0, 255, 255), mask);
-            auto split_path = split(previous_frames_names[i], "/");
-            std::string filename = output_dir + "/res_" + split_path[split_path.size()-1];
-            imwrite(filename, drawImg);
+                auto &obs = match[offset + 0];
+                // 3d points correspond to flann train point ids
+                obs_point[totalPointsUntilFrame[frameId] + obs.queryIdx] = obs.trainIdx;
+            }
         }
     }
 }
-
-void OnlinePointMatcher::mask_matches_by_train_img_idx(const std::vector<DMatch> & matches, int train_img_idx, std::vector<char> & mask) {
-    mask.resize(matches.size());
-    fill(mask.begin(), mask.end(), 0);
-
-    for(size_t i = 0; i < matches.size(); i++) {
-        if(matches[i].imgIdx == train_img_idx)
-            mask[i] = 1;
-    }
-}
-
