@@ -9,17 +9,36 @@
 
 
 int main(){
-//    BalDataloader data("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/bal/venice/problem-52-64053-pre.txt");
-//
-//    BundleAdjustment ba{data};
-//
-//    ba.createProblem();
-//    ba.solve();
+//    KinectDataloader* data = new KinectDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
+
+
+    BalDataloader* data = new BalDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/bal/venice/problem-52-64053-pre.txt");
+
+
+    auto solvers = {ceres::SPARSE_NORMAL_CHOLESKY, ceres::DENSE_SCHUR, ceres::SPARSE_SCHUR, ceres::ITERATIVE_SCHUR, ceres::CGNR};
+    for (auto & solver : solvers) {
+        ceres::Solver::Options options;
+
+        options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+        options.use_nonmonotonic_steps = false;
+        options.linear_solver_type = solver;
+        options.minimizer_progress_to_stdout = true;
+        options.max_num_iterations = 600;
+        options.num_threads = 4;
+
+        BundleAdjustment ba{data, options};
+
+        ba.createProblem();
+        ba.solve();
+    }
+
 //
 //    ba.writeMesh("veniceGroundTruth.off");
 //    ba.writeCamerasMesh("veniceCameraGroundTruth.off");
 
-    KinectDataloader kinectDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
+
+
+    delete data;
 
     return 0;
 }

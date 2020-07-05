@@ -6,11 +6,11 @@
 
 #include <ceres/ceres.h>
 
-#include "BalDataloader.h"
+#include "Dataloader.h"
 
 class BundleAdjustment {
 public:
-    BundleAdjustment(const BalDataloader& dataset);
+    BundleAdjustment(Dataloader* dataset, ceres::Solver::Options options);
     virtual ~BundleAdjustment();
 
     void createProblem();
@@ -18,18 +18,20 @@ public:
 
     double* getRotation(size_t cameraIndex);
     double* getTranslation(size_t cameraIndex);
+    double* getIntrinsics(size_t cameraIndex);
     double* getPoint(size_t pointIndex);
 
     void projectFrom3D(int cam_id);
     void writeMesh(std::string filename);
 private:
+    Dataloader* dataset;
+    ceres::Solver::Options options;
+
     ceres::Problem problem;
 
-    BalDataloader dataset;
     double *R;
     double *T;
     double *X;
-    void reset();
-    void configureSolver(ceres::Solver::Options& options);
+    double *intrinsics;
 };
 

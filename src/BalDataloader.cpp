@@ -54,3 +54,75 @@ BalDataloader::BalDataloader(std::string path) {
         points[i] = {x, y, z};
     }
 }
+
+
+BalDataloader::~BalDataloader() {}
+
+
+std::vector<cv::Point2f> BalDataloader::getObservations() const {
+    std::vector<cv::Point2f> obs;
+
+    for (auto &pt : this->observations) {
+        obs.emplace_back(pt.first, pt.second);
+    }
+
+    return obs;
+}
+
+int BalDataloader::getObsCam(int index) const {
+    return this->obs_cam[index];
+}
+
+int BalDataloader::getObsPoint(int index) const {
+    return this->obs_point[index];
+}
+
+int BalDataloader::getNumPoints() const {
+    return this->num_points;
+}
+
+int BalDataloader::getNumObservations() const {
+    return this->num_observations;
+}
+
+int BalDataloader::getNumFrames() const {
+    return this->num_camera;
+}
+
+bool BalDataloader::isColorAvailable() const {
+    return false;
+}
+
+bool BalDataloader::isDepthAvailable() const {
+    return false;
+}
+
+cv::Mat BalDataloader::getColor(int frameId) const {
+    return cv::Mat();
+}
+
+cv::Mat BalDataloader::getDepth(int frameId) const {
+    return cv::Mat();
+}
+
+void BalDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+    for (int i = 0; i < num_camera; ++i) {
+        auto &cam = cameras[i];
+        R[3 * i + 0] = cam.R[0];
+        R[3 * i + 1] = cam.R[1];
+        R[3 * i + 2] = cam.R[2];
+        T[3 * i + 0] = cam.t[0];
+        T[3 * i + 1] = cam.t[1];
+        T[3 * i + 2] = cam.t[2];
+        intrinsics[3 * i + 0] = cam.f;
+        intrinsics[3 * i + 1] = cam.k1;
+        intrinsics[3 * i + 2] = cam.k2;
+    }
+
+    for (int i = 0; i < num_points; ++i) {
+        auto & pt = points[i];
+        X[3*i + 0] = std::get<0>(pt);
+        X[3*i + 1] = std::get<1>(pt);
+        X[3*i + 2] = std::get<2>(pt);
+    }
+}

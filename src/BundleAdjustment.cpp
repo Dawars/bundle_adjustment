@@ -3,81 +3,60 @@
 //
 #include <fstream>
 #include <ceres/rotation.h>
+#include <opencv2/opencv.hpp>
 
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BAConstraint.h"
 
-BundleAdjustment::BundleAdjustment(const BalDataloader &dataset) : dataset(dataset) {reset();}
+BundleAdjustment::BundleAdjustment(Dataloader *dataset, ceres::Solver::Options options)
+        : dataset(dataset),
+          options(options) {
+
+    R = new double[dataset->getNumFrames() * 3];
+    T = new double[dataset->getNumFrames() * 3];
+    intrinsics = new double[dataset->getNumFrames() * 3];
+    X = new double[dataset->getNumPoints() * 3]; // reconstructed 3D points
+
+    dataset->initialize(R, T, intrinsics, X);
+}
 
 BundleAdjustment::~BundleAdjustment() {
     delete[] R;
     delete[] T;
     delete[] X;
+    delete[] intrinsics;
 }
 
-void BundleAdjustment::reset() {
-    //todo maybe init with data from point matching
-
-    R = new double[dataset.num_camera * 3];
-    T = new double[dataset.num_camera * 3];
-    X = new double[dataset.num_points * 3]; // reconstructed 3D points
-
-    std::fill_n(R, dataset.num_camera * 3, 0);
-    std::fill_n(T, dataset.num_camera * 3, 0);
-    std::fill_n(X, dataset.num_points * 3, 1);
-    for (int i = 0; i < dataset.num_camera; ++i) {
-        R[i + i % 3] = dataset.cameras[i / 3].R[i % 3];
-        T[i + i % 3] = dataset.cameras[i / 3].t[i % 3];
-    }
-    for (int i = 0; i < dataset.num_points; ++i) {
-        auto[x, y, z] = dataset.points[i];
-        X[3 * i] = x;
-        X[3 * i + 1] = y;
-        X[3 * i + 2] = z;
-    }
-}
 void BundleAdjustment::createProblem() {
-    for (int i = 0; i < dataset.num_observations; ++i) {
+    for (int i = 0; i < dataset->getNumObservations(); ++i) {
 
         // get camera for observation
-        size_t camIndex = dataset.obs_cam[i];
-        size_t pointIndex = dataset.obs_point[i];
-        Eigen::Vector3f obs = {dataset.observations[i].first, dataset.observations[i].second, 1};
-        auto cost_function = BAConstraint::create(obs, dataset.cameras[camIndex]);
+        size_t camIndex = dataset->getObsCam(i);
+        size_t pointIndex = dataset->getObsPoint(i);
+
+        auto observations = dataset->getObservations();
+        auto &obs = observations[i];
+
+        // todo add cam intrinsics as fixed vars
+        auto cost_function = BAConstraint::create(obs);
 
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
                                  getPoint(pointIndex),
                                  getRotation(camIndex),
-                                 getTranslation(camIndex)
+                                 getTranslation(camIndex),
+                                 getIntrinsics(camIndex)
         );
     }
 }
 
 void BundleAdjustment::solve() {
-    auto solvers = {ceres::SPARSE_NORMAL_CHOLESKY, ceres::DENSE_SCHUR, ceres::SPARSE_SCHUR, ceres::ITERATIVE_SCHUR, ceres::CGNR};
-    for (auto solver : solvers) {
-        reset();
-        ceres::Solver::Options options;
-        configureSolver(options);
-        options.linear_solver_type = solver;
 
-        // Run the solver (for one iteration).
-        ceres::Solver::Summary summary;
-        ceres::Solve(options, &problem, &summary);
-        std::cout << ceres::LinearSolverTypeToString(solver) << std::endl;
-        std::cout << summary.FullReport() << std::endl;
-    }
-}
-
-void BundleAdjustment::configureSolver(ceres::Solver::Options &options) {
-    // Ceres options.
-    options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.use_nonmonotonic_steps = false;
-//    options.linear_solver_type = ceres::LinearSolverType;//SPARSE_NORMAL_CHOLESKY;
-    options.minimizer_progress_to_stdout = false;
-    options.max_num_iterations = 600;
-    options.num_threads = 4;
+    // Run the solver (for one iteration).
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << ceres::LinearSolverTypeToString(options.linear_solver_type) << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 }
 
 double *BundleAdjustment::getRotation(size_t cameraIndex) {
@@ -88,10 +67,14 @@ double *BundleAdjustment::getTranslation(size_t cameraIndex) {
     return &T[cameraIndex * 3];
 }
 
+double *BundleAdjustment::getIntrinsics(size_t pointIndex) {
+    return &intrinsics[pointIndex * 3];
+}
+
 double *BundleAdjustment::getPoint(size_t pointIndex) {
     return &X[pointIndex * 3];
 }
-
+/*
 template<typename T>
 void transformation(T *R, T *tr, T *src, T *pt, T f, T k1, T k2) {
     Eigen::Map<const Eigen::Matrix<T, 3, 1> > t(tr);
@@ -110,7 +93,7 @@ void transformation(T *R, T *tr, T *src, T *pt, T f, T k1, T k2) {
     pt[1] = pred.y();
     pt[2] = pred.z();
 }
-
+/*
 void BundleAdjustment::projectFrom3D(int cam_id) {
     double error1 = 0.;
     double error2 = 0.;
@@ -138,8 +121,9 @@ void BundleAdjustment::projectFrom3D(int cam_id) {
         }
     }
     std::cout << error1 << " " << error2 << std::endl;
-}
+}*/
 
+/*
 
 void BundleAdjustment::writeMesh(std::string filename) {
 
@@ -188,4 +172,5 @@ void BundleAdjustment::writeMesh(std::string filename) {
         }
     }
 }
+*/
 

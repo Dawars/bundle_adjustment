@@ -6,7 +6,7 @@
 
 #include <ceres/cost_function.h>
 #include <ceres/ceres.h>
-#include <Eigen/src/Core/Matrix.h>
+#include <opencv2/opencv.hpp>
 
 #include "BalDataloader.h"
 
@@ -16,16 +16,15 @@
 class BAConstraint {
 
 public:
-    BAConstraint(const Eigen::Vector3f& observation, const Camera& camera);
+    BAConstraint(const cv::Point2f& observation);
 
     template <typename T>
-    bool operator()(const T* const point, const T* const rot, const T* const tr, T* residuals) const;
+    bool operator()(const T* const point, const T* const rot, const T* const tr, const T* const intrinsics, T* residuals) const;
 
-    static ceres::CostFunction* create(const Eigen::Vector3f& observation, const Camera& camera);
+    static ceres::CostFunction* create(const cv::Point2f& observation);
 
 protected:
-    const Camera& camera; // use only intrinsics
-    const Eigen::Vector3f observation;
+    const cv::Point2f observation;
 };
 
 

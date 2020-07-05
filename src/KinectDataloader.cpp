@@ -27,13 +27,13 @@ void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
 }
 
 KinectDataloader::KinectDataloader(const std::string &datasetDir) {
-    std::unordered_map<std::string, float> params = {
-            {"blockSize",    2.0},
-            {"apertureSize", 3.0},
-            {"k",            0.04},
-            {"thresh",       200}
-    };
-
+//    std::unordered_map<std::string, float> params = {
+//            {"blockSize",    2.0},
+//            {"apertureSize", 3.0},
+//            {"k",            0.04},
+//            {"thresh",       200}
+//    };
+//
 //    SiftDetector detector;
 //    HarrisDetector detector;
 //    ShiTomasiDetector detector;
@@ -42,8 +42,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     auto extractor = SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    OnlinePointMatcher correspondenceFinder{detector, extractor, matcher,
-                                            {{"ratioThreshold", 0.7},}};
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.7}}};
 
     VirtualSensor sensor{};
     sensor.Init(datasetDir);
@@ -51,24 +50,64 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     while (sensor.ProcessNextFrame()) {
         auto color = sensor.GetColor();
         auto depth = sensor.GetDepth();
+        colorImages.push_back(color);
+        depthImages.push_back(depth);
 
-        // Feature Detection and Matching
-        // https://docs.opencv.org/3.4/db/d27/tutorial_py_table_of_contents_feature2d.html
-//        auto featurePoints = detector.getFeatures(color, depth, params);
-
-//        visualize(color, featurePoints);
-
-        correspondenceFinder.extractKeypoints(color);
-        // TODO: save depth and color values at feature points
-
+        correspondenceFinder->extractKeypoints(color);
     }
 
-    correspondenceFinder.matchKeypoints();
+    correspondenceFinder->matchKeypoints();
 
     // TODO: depth test
 
-    // TODO: visualize matches, images need to be stored in memory
+    // TODO: visualize matches
 
+}
 
-    // TODO: Save out data from matcher
+KinectDataloader::~KinectDataloader() {
+    delete this->correspondenceFinder;
+}
+
+int KinectDataloader::getObsCam(int index) const {
+    return this->correspondenceFinder->getObsCam(index);
+}
+
+int KinectDataloader::getObsPoint(int index) const {
+    return this->correspondenceFinder->getObsPoint(index);
+}
+
+int KinectDataloader::getNumPoints() const {
+    return this->correspondenceFinder->getNumPoints();
+}
+
+std::vector<cv::Point2f> KinectDataloader::getObservations() const {
+    return this->correspondenceFinder->getObservations();
+}
+
+int KinectDataloader::getNumObservations() const {
+    return this->correspondenceFinder->getNumPoints();
+}
+
+int KinectDataloader::getNumFrames() const {
+    return this->correspondenceFinder->getNumFrames();
+}
+
+bool KinectDataloader::isColorAvailable() const {
+    return true;
+}
+
+bool KinectDataloader::isDepthAvailable() const {
+    return true;
+}
+
+cv::Mat KinectDataloader::getColor(int frameId) const {
+    return this->colorImages[frameId];
+}
+
+cv::Mat KinectDataloader::getDepth(int frameId) const {
+    return this->depthImages[frameId];
+}
+
+void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+
 }
