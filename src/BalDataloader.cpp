@@ -19,6 +19,7 @@ BalDataloader::BalDataloader(std::string path) {
 //    <point_num_points>
 
     std::ifstream file(path);
+    if(!file.is_open()) { throw std::invalid_argument("File could not be opened"); }
 
     file >> num_camera >> num_points >> num_observations;
 
@@ -43,6 +44,8 @@ BalDataloader::BalDataloader(std::string path) {
         float R[3], T[3], f, k1, k2;
         file >> R[0] >> R[1] >> R[2] >> T[0] >> T[1] >> T[2] >> f >> k1 >> k2;
 
+        // convert from right handed to left handed system
+        // https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
         cameras[i] = {R[0], R[1], R[2], T[0], T[1], T[2], f, k1, k2};
     }
 
@@ -52,5 +55,80 @@ BalDataloader::BalDataloader(std::string path) {
         float x, y, z;
         file >> x >> y >> z;
         points[i] = {x, y, z};
+    }
+}
+
+
+BalDataloader::~BalDataloader() {}
+
+
+std::vector<cv::Point2f> BalDataloader::getObservations() const {
+    std::vector<cv::Point2f> obs;
+
+    for (auto &pt : this->observations) {
+        obs.emplace_back(pt.first, pt.second);
+    }
+
+    return obs;
+}
+
+int BalDataloader::getObsCam(int index) const {
+    return this->obs_cam[index];
+}
+
+int BalDataloader::getObsPoint(int index) const {
+    return this->obs_point[index];
+}
+
+int BalDataloader::getNumPoints() const {
+    return this->num_points;
+}
+
+int BalDataloader::getNumObservations() const {
+    return this->num_observations;
+}
+
+int BalDataloader::getNumFrames() const {
+    return this->num_camera;
+}
+
+bool BalDataloader::isColorAvailable() const {
+    return false;
+}
+
+bool BalDataloader::isDepthAvailable() const {
+    return false;
+}
+
+cv::Mat BalDataloader::getColor(int frameId) const {
+    return cv::Mat();
+}
+
+cv::Mat BalDataloader::getDepth(int frameId) const {
+    return cv::Mat();
+}
+
+void BalDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+    for (int i = 0; i < num_camera; ++i) {
+        auto &cam = cameras[i];
+        R[3 * i + 0] = cam.R[0];
+        R[3 * i + 1] = cam.R[1];
+        R[3 * i + 2] = cam.R[2];
+        T[3 * i + 0] = cam.t[0];
+        T[3 * i + 1] = cam.t[1];
+        T[3 * i + 2] = cam.t[2];
+        intrinsics[3 * i + 0] = cam.f; // fx
+        intrinsics[3 * i + 1] = cam.f; // fy
+        intrinsics[3 * i + 2] = 0; // ox
+        intrinsics[3 * i + 3] = 0; // oy
+        intrinsics[3 * i + 4] = cam.k1; // k1
+        intrinsics[3 * i + 5] = cam.k2; // k2
+    }
+
+    for (int i = 0; i < num_points; ++i) {
+        auto & pt = points[i];
+        X[3*i + 0] = std::get<0>(pt);
+        X[3*i + 1] = std::get<1>(pt);
+        X[3*i + 2] = std::get<2>(pt);
     }
 }

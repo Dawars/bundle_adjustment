@@ -6,6 +6,9 @@
 
 #include <vector>
 #include <set>
+#include <opencv2/opencv.hpp>
+
+#include "bundleadjust/Dataloader.h"
 
 struct Camera {
     float R[3];
@@ -35,11 +38,11 @@ struct Camera {
  * Loader for the Bal dataset
  * https://grail.cs.washington.edu/projects/bal/
  */
-class BalDataloader {
+class BalDataloader : public Dataloader {
 public:
     BalDataloader(std::string path);
+    ~BalDataloader() override;
 
-public:
     int num_camera, num_points, num_observations;
 
     std::vector<std::pair<float, float>> observations; // 2d points
@@ -47,5 +50,20 @@ public:
     std::vector<size_t> obs_point; //  ith 2d point corresponds to jth 3d point
     std::vector<Camera> cameras;
     std::vector<std::tuple<float, float, float>> points;
+
+    inline int getObsCam(int index) const override;
+    inline int getObsPoint(int index) const override;
+    inline int getNumPoints() const override;
+    inline std::vector<cv::Point2f> getObservations() const override;
+    inline int getNumObservations() const override;
+    inline int getNumFrames() const override;
+
+    inline bool isColorAvailable() const override;
+    inline bool isDepthAvailable() const override;
+
+    cv::Mat getColor(int frameId) const override;
+    cv::Mat getDepth(int frameId) const override;
+
+    virtual void initialize(double* R, double* T, double* intrinsics, double* X) override;
 
 };

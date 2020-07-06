@@ -30,6 +30,8 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 }
 
 void OnlinePointMatcher::matchKeypoints() {
+    std::cout << "Matching points" << std::endl;
+
     const float ratio_thresh = params["ratioThreshold"];
 
     int num_frames = this->keypoints.size();
@@ -88,4 +90,36 @@ void OnlinePointMatcher::matchKeypoints() {
         }
     }
     std::cout << numPoints3d << std::endl;
+}
+
+std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
+    std::vector<cv::Point2f> points;
+
+    for (auto &frame : this->keypoints) {
+        for (auto &keypoint : frame) {
+            points.push_back(keypoint.pt);
+        }
+    }
+
+    return points;
+}
+
+int OnlinePointMatcher::getObsCam(int index) const {
+    return this->obs_cam[index];
+}
+
+int OnlinePointMatcher::getObsPoint(int index) const {
+    return this->obs_point[index];
+}
+
+int OnlinePointMatcher::getNumObservations() const {
+    return this->obs_point.size();
+}
+
+int OnlinePointMatcher::getNumFrames() const {
+    return this->keypoints.size();
+}
+
+int OnlinePointMatcher::getNumPoints() const {
+    return this->numPoints3d;
 }

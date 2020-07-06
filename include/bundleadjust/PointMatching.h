@@ -30,4 +30,11 @@ public:
 
     void matchKeypoints();
 
+    std::vector<cv::Point2f> getObservations() const;
+
+    int getObsCam(int index) const;
+    int getObsPoint(int index) const;
+    int getNumPoints() const;
+    int getNumObservations() const;
+    int getNumFrames() const;
 };
