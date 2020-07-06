@@ -19,6 +19,7 @@ BalDataloader::BalDataloader(std::string path) {
 //    <point_num_points>
 
     std::ifstream file(path);
+    if(!file.is_open()) { throw std::invalid_argument("File could not be opened"); }
 
     file >> num_camera >> num_points >> num_observations;
 
