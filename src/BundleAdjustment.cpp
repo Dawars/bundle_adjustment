@@ -28,18 +28,20 @@ BundleAdjustment::~BundleAdjustment() {
 }
 
 void BundleAdjustment::createProblem() {
+    std::cout << "Creating problem" << std::endl;
+    auto observations = dataset->getObservations();
+
     for (int i = 0; i < dataset->getNumObservations(); ++i) {
 
         // get camera for observation
         size_t camIndex = dataset->getObsCam(i);
         size_t pointIndex = dataset->getObsPoint(i);
 
-        auto observations = dataset->getObservations();
         auto &obs = observations[i];
 
         // todo add cam intrinsics as fixed vars
         auto cost_function = BAConstraint::create(obs);
-
+        // todo group params
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
                                  getPoint(pointIndex),
@@ -47,16 +49,28 @@ void BundleAdjustment::createProblem() {
                                  getTranslation(camIndex),
                                  getIntrinsics(camIndex)
         );
+
+        if(dataset->isColorAvailable()){
+            // todo add photometric loss
+        }
+
+        if(dataset->isDepthAvailable()){
+            // todo add depth loss
+        }
     }
+    std::cout << "Creating problem end" << std::endl;
+
 }
 
 void BundleAdjustment::solve() {
+    std::cout << "Solving problem" << std::endl;
 
-    // Run the solver (for one iteration).
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << ceres::LinearSolverTypeToString(options.linear_solver_type) << std::endl;
     std::cout << summary.FullReport() << std::endl;
+
+    std::cout << "Solving problem end" << std::endl;
 }
 
 double *BundleAdjustment::getRotation(size_t cameraIndex) {

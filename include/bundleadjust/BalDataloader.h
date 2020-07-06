@@ -51,15 +51,15 @@ public:
     std::vector<Camera> cameras;
     std::vector<std::tuple<float, float, float>> points;
 
-    virtual int getObsCam(int index) const override;
-    virtual int getObsPoint(int index) const override;
-    virtual int getNumPoints() const override;
-    virtual std::vector<cv::Point2f> getObservations() const override;
-    virtual int getNumObservations() const override;
-    virtual int getNumFrames() const override;
+    inline int getObsCam(int index) const override;
+    inline int getObsPoint(int index) const override;
+    inline int getNumPoints() const override;
+    inline std::vector<cv::Point2f> getObservations() const override;
+    inline int getNumObservations() const override;
+    inline int getNumFrames() const override;
 
-    bool isColorAvailable() const override;
-    bool isDepthAvailable() const override;
+    inline bool isColorAvailable() const override;
+    inline bool isDepthAvailable() const override;
 
     cv::Mat getColor(int frameId) const override;
     cv::Mat getDepth(int frameId) const override;

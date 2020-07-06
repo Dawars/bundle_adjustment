@@ -19,18 +19,18 @@ public:
     std::vector<cv::Mat> colorImages;
     std::vector<cv::Mat> depthImages;
 
-    int getObsCam(int index) const override;
-    int getObsPoint(int index) const override;
-    int getNumPoints() const override;
-    std::vector<cv::Point2f> getObservations() const override;
-    int getNumObservations() const override;
-    int getNumFrames() const override;
+    inline int getObsCam(int index) const override;
+    inline int getObsPoint(int index) const override;
+    inline int getNumPoints() const override;
+    inline std::vector<cv::Point2f> getObservations() const override;
+    inline int getNumObservations() const override;
+    inline int getNumFrames() const override;
 
-    bool isColorAvailable() const override;
-    bool isDepthAvailable() const override;
+    inline bool isColorAvailable() const override;
+    inline bool isDepthAvailable() const override;
 
-    cv::Mat getColor(int frameId) const override;
-    cv::Mat getDepth(int frameId) const override;
+    inline cv::Mat getColor(int frameId) const override;
+    inline cv::Mat getDepth(int frameId) const override;
 
     void initialize(double* R, double* T, double* intrinsics, double* X) override;
 
