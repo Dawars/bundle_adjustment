@@ -22,6 +22,7 @@ target_include_directories(BundleAdjustment PUBLIC ../include)
 
 target_include_directories(BundleAdjustment PRIVATE ../libs/eigen)
 
+target_link_libraries(BundleAdjustment PRIVATE fmt::fmt)
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(BundleAdjustment PRIVATE OpenMP::OpenMP_CXX)
