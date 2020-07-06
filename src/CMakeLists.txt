@@ -17,6 +17,7 @@ add_library(BundleAdjustment ${HEADER_LIST}
         detector/SiftDetector.cpp
         PointMatching.cpp
         )
+target_compile_features(BundleAdjustment PRIVATE cxx_std_17)
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
