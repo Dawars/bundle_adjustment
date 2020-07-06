@@ -2,6 +2,8 @@
 // Created by Komorowicz David on 2020. 06. 20..
 //
 #include <fstream>
+
+#include <Eigen/Dense>
 #include <ceres/rotation.h>
 #include <opencv2/opencv.hpp>
 
@@ -14,7 +16,7 @@ BundleAdjustment::BundleAdjustment(Dataloader *dataset, ceres::Solver::Options o
 
     R = new double[dataset->getNumFrames() * 3];
     T = new double[dataset->getNumFrames() * 3];
-    intrinsics = new double[dataset->getNumFrames() * 3];
+    intrinsics = new double[dataset->getNumFrames() * 6];
     X = new double[dataset->getNumPoints() * 3]; // reconstructed 3D points
 
     dataset->initialize(R, T, intrinsics, X);
@@ -37,7 +39,8 @@ void BundleAdjustment::createProblem() {
         size_t camIndex = dataset->getObsCam(i);
         size_t pointIndex = dataset->getObsPoint(i);
 
-        auto &obs = observations[i];
+        Eigen::Vector3f obs;
+        obs << observations[i].x, observations[i].y, 1.f;
 
         auto cost_function = BAConstraint::create(obs);
         problem.AddResidualBlock(cost_function,
@@ -84,7 +87,7 @@ double *BundleAdjustment::getTranslation(size_t cameraIndex) {
 }
 
 double *BundleAdjustment::getIntrinsics(size_t pointIndex) {
-    return &intrinsics[pointIndex * 3];
+    return &intrinsics[pointIndex * 6];
 }
 
 double *BundleAdjustment::getPoint(size_t pointIndex) {
