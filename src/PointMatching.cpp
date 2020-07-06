@@ -9,10 +9,12 @@ using namespace cv::xfeatures2d;
 
 OnlinePointMatcher::OnlinePointMatcher(const Ptr<cv::FeatureDetector> detector,
                                        const Ptr<cv::DescriptorExtractor> extractor,
-                                       const Ptr<cv::DescriptorMatcher> matcher) :
+                                       const Ptr<cv::DescriptorMatcher> matcher,
+                                       std::unordered_map<std::string, float> params) :
         detector(detector),
         extractor(extractor),
-        matcher(matcher) {}
+        matcher(matcher),
+        params(params) {}
 
 void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 
@@ -28,6 +30,7 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 }
 
 void OnlinePointMatcher::matchKeypoints() {
+    const float ratio_thresh = params["ratioThreshold"];
 
     int num_frames = this->keypoints.size();
     int totalPointsUntilFrame[num_frames];
@@ -48,34 +51,41 @@ void OnlinePointMatcher::matchKeypoints() {
         std::fill_n(&this->obs_cam[totalPointsUntilFrame[i]], len, i);
     }
 
-    // init matcher
-    matcher->add(descriptors); // add current descriptor to the matcher
-    matcher->train(); // train matcher on descriptors
 
     for (int frameId = 0; frameId < num_frames; ++frameId) {
 
-        auto &desc = descriptors[frameId];
+        // init matcher
+        matcher->clear();
+        matcher->add(descriptors[frameId]); // add current descriptor to the matcher
+        matcher->train(); // train matcher on descriptors
 
-        std::vector<std::vector<cv::DMatch>> knn_matches; // mask not supported for flann
-        matcher->knnMatch(desc, knn_matches, 3, true); // 3 to skip 1st match with same frame
+        for (int otherFrameId = 0; otherFrameId < frameId; ++otherFrameId) {
+            auto &desc = descriptors[otherFrameId];
 
-        const float ratio_thresh = 0.7f; // todo param
+            std::vector<std::vector<cv::DMatch>> knn_matches; // mask not supported for flann
+            matcher->knnMatch(desc, knn_matches, 2);
 
-        for (int i = 0; i < knn_matches.size(); ++i) {
-            std::vector<DMatch> &match = knn_matches[i];
 
-            int offset = 0;
-            if (match[0].imgIdx == frameId) { // closest point is same point on same image, skip
-                offset = 1;
-            }
+            for (int i = 0; i < knn_matches.size(); ++i) {
+                std::vector<DMatch> &match = knn_matches[i];
 
-            // ratio test
-            if (match[offset + 0].distance < ratio_thresh * match[offset + 1].distance) {
+                // ratio test
+                if (match[0].distance < ratio_thresh * match[1].distance) {
 
-                auto &obs = match[offset + 0];
-                // 3d points correspond to flann train point ids
-                obs_point[totalPointsUntilFrame[frameId] + obs.queryIdx] = obs.trainIdx;
+                    auto &obs = match[0];
+                    // keep track of 3D points (1 3D point corresponding to all 2D matches)
+                    int *other3D = &obs_point[totalPointsUntilFrame[otherFrameId] + obs.queryIdx];
+                    int *current3D = &obs_point[totalPointsUntilFrame[frameId] + obs.trainIdx];
+                    if (*other3D == -1) { // 2d observation doesn't correspond to 3D point yet
+                        int newPoint = this->numPoints3d++;
+                        *other3D = newPoint;
+                        *current3D = newPoint;
+                    } else { // 2D point has already been matched to 3D point, assign new 2D point to it as well
+                        *current3D = *other3D;
+                    }
+                }
             }
         }
     }
+    std::cout << numPoints3d << std::endl;
 }
