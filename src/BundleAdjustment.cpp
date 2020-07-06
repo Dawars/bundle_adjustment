@@ -39,9 +39,7 @@ void BundleAdjustment::createProblem() {
 
         auto &obs = observations[i];
 
-        // todo add cam intrinsics as fixed vars
         auto cost_function = BAConstraint::create(obs);
-        // todo group params
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
                                  getPoint(pointIndex),
@@ -50,6 +48,10 @@ void BundleAdjustment::createProblem() {
                                  getIntrinsics(camIndex)
         );
 
+        // adding cam intrinsics as fixed vars
+        problem.SetParameterBlockConstant(getIntrinsics(camIndex));
+
+        // todo group params http://ceres-solver.org/nnls_solving.html#parameterblockordering
         if(dataset->isColorAvailable()){
             // todo add photometric loss
         }
