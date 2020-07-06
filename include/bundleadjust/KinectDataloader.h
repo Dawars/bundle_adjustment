@@ -37,5 +37,6 @@ public:
 private:
 //    std::vector<Camera> cameras;
     OnlinePointMatcher* correspondenceFinder;
+    double intrinsics[6]; // fx, fy, ox, oy, k1, k2
 };
 

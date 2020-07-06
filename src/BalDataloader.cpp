@@ -44,6 +44,8 @@ BalDataloader::BalDataloader(std::string path) {
         float R[3], T[3], f, k1, k2;
         file >> R[0] >> R[1] >> R[2] >> T[0] >> T[1] >> T[2] >> f >> k1 >> k2;
 
+        // convert from right handed to left handed system
+        // https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
         cameras[i] = {R[0], R[1], R[2], T[0], T[1], T[2], f, k1, k2};
     }
 
@@ -115,9 +117,12 @@ void BalDataloader::initialize(double *R, double *T, double *intrinsics, double 
         T[3 * i + 0] = cam.t[0];
         T[3 * i + 1] = cam.t[1];
         T[3 * i + 2] = cam.t[2];
-        intrinsics[3 * i + 0] = cam.f;
-        intrinsics[3 * i + 1] = cam.k1;
-        intrinsics[3 * i + 2] = cam.k2;
+        intrinsics[3 * i + 0] = cam.f; // fx
+        intrinsics[3 * i + 1] = cam.f; // fy
+        intrinsics[3 * i + 2] = 0; // ox
+        intrinsics[3 * i + 3] = 0; // oy
+        intrinsics[3 * i + 4] = cam.k1; // k1
+        intrinsics[3 * i + 5] = cam.k2; // k2
     }
 
     for (int i = 0; i < num_points; ++i) {

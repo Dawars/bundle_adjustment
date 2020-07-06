@@ -47,9 +47,18 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     VirtualSensor sensor{};
     sensor.Init(datasetDir);
 
+    auto intrinsics = sensor.GetColorIntrinsics();
+    this->intrinsics[0] = intrinsics(0, 0);
+    this->intrinsics[0] = intrinsics(1, 1);
+    this->intrinsics[0] = intrinsics(0, 2);
+    this->intrinsics[0] = intrinsics(1, 2);
+    this->intrinsics[0] = 0;
+    this->intrinsics[0] = 0;
+
     while (sensor.ProcessNextFrame()) {
         auto color = sensor.GetColor();
         auto depth = sensor.GetDepth();
+        // todo filter depth map
         colorImages.push_back(color);
         depthImages.push_back(depth);
 
@@ -109,5 +118,25 @@ cv::Mat KinectDataloader::getDepth(int frameId) const {
 }
 
 void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+    for (int i = 0; i < this->getNumFrames(); ++i) {
+        R[3 * i + 0] = 0; // todo init from procrutes
+        R[3 * i + 1] = 0;
+        R[3 * i + 2] = 0;
+        T[3 * i + 0] = 0;
+        T[3 * i + 1] = 0;
+        T[3 * i + 2] = 0;
 
+        for (int j = 0; j < 6; ++j) {
+            intrinsics[3 * i + j] = this->intrinsics[j];
+        }
+    }
+
+    for (int i = 0; i < this->getNumPoints(); ++i) {
+        // todo init from procrutes
+
+//        X[3*i + 0] = u;
+//        X[3*i + 1] = v;
+//        X[3*i + 2] = depthImages[frameId].at<double>(u, v);
+
+    }
 }

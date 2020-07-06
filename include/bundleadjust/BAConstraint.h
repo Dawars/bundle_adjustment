@@ -16,15 +16,15 @@
 class BAConstraint {
 
 public:
-    BAConstraint(const cv::Point2f& observation);
+    BAConstraint(const Eigen::Vector3f& observation);
 
     template <typename T>
     bool operator()(const T* const point, const T* const rot, const T* const tr, const T* const intrinsics, T* residuals) const;
 
-    static ceres::CostFunction* create(const cv::Point2f& observation);
+    static ceres::CostFunction* create(const Eigen::Vector3f& observation);
 
 protected:
-    const cv::Point2f observation;
+    const Eigen::Vector3f observation;
 };
 
 
