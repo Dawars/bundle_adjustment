@@ -96,11 +96,11 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
     auto intrinsics = sensor.GetColorIntrinsics();
     this->intrinsics[0] = intrinsics(0, 0);
-    this->intrinsics[0] = intrinsics(1, 1);
-    this->intrinsics[0] = intrinsics(0, 2);
-    this->intrinsics[0] = intrinsics(1, 2);
-    this->intrinsics[0] = 0;
-    this->intrinsics[0] = 0;
+    this->intrinsics[1] = intrinsics(1, 1);
+    this->intrinsics[2] = intrinsics(0, 2);
+    this->intrinsics[3] = intrinsics(1, 2);
+    this->intrinsics[4] = 0;
+    this->intrinsics[5] = 0;
 
     while (sensor.ProcessNextFrame()) {
         auto color = sensor.GetColor();
@@ -174,7 +174,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         T[3 * i + 2] = 0;
 
         for (int j = 0; j < 6; ++j) {
-            intrinsics[3 * i + j] = this->intrinsics[j];
+            intrinsics[6 * i + j] = this->intrinsics[j];
         }
     }
 
