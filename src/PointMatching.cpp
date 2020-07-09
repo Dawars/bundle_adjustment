@@ -62,6 +62,8 @@ void OnlinePointMatcher::matchKeypoints() {
         matcher->train(); // train matcher on descriptors
 
         for (int otherFrameId = 0; otherFrameId < frameId; ++otherFrameId) {
+            if(descriptors[frameId].rows == 0) { continue; }
+
             // keep statistics on number of outliers
             int all = 0;
             int filtered = 0;
