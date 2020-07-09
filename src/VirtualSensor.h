@@ -83,6 +83,8 @@ public:
     // get current trajectory transformation
     Eigen::Matrix4f GetTrajectory();
 
+    std::vector<Eigen::Matrix4f> GetTrajectories();
+
 private:
 
     bool

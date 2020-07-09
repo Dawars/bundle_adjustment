@@ -8,12 +8,14 @@
 #include <vector>
 #include <tuple>
 
+#include <Eigen/Dense>
+
 #include "bundleadjust/Dataloader.h"
 #include "bundleadjust/PointMatching.h"
 
 class KinectDataloader : public Dataloader {
 public:
-    KinectDataloader(const std::string &datasetDir);
+    KinectDataloader(const std::string &datasetDir, bool initGroundTruth = false);
     virtual ~KinectDataloader() override;
 
     std::vector<cv::Mat> colorImages;
@@ -35,8 +37,9 @@ public:
     void initialize(double* R, double* T, double* intrinsics, double* X) override;
 
 private:
-//    std::vector<Camera> cameras;
+    bool initGroundTruth;
     OnlinePointMatcher* correspondenceFinder;
     double intrinsics[6]; // fx, fy, ox, oy, k1, k2
+    std::vector<Eigen::Matrix4f> trajectories;
 };
 

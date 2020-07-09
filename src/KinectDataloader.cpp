@@ -73,7 +73,8 @@ void visualizeMatch(cv::Mat img1, cv::Mat img2, OnlinePointMatcher *matcher) {
 }
 
 
-KinectDataloader::KinectDataloader(const std::string &datasetDir) {
+KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroundTruth)
+        : initGroundTruth(initGroundTruth) {
 //    std::unordered_map<std::string, float> params = {
 //            {"blockSize",    2.0},
 //            {"apertureSize", 3.0},
@@ -102,6 +103,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     this->intrinsics[3] = intrinsics(1, 2);
     this->intrinsics[4] = 0;
     this->intrinsics[5] = 0;
+
+    this-> trajectories = sensor.GetTrajectories();
 
     while (sensor.ProcessNextFrame()) {
         auto color = sensor.GetColor();
@@ -166,17 +169,25 @@ cv::Mat KinectDataloader::getDepth(int frameId) const {
 }
 
 void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
-    for (int i = 0; i < this->getNumFrames(); ++i) {
-        R[3 * i + 0] = 0; // todo init from procrutes
-        R[3 * i + 1] = 0;
-        R[3 * i + 2] = 0;
-        T[3 * i + 0] = 0;
-        T[3 * i + 1] = 0;
-        T[3 * i + 2] = 0;
+    if(this->initGroundTruth) {
+        for (int i = 0; i < this->getNumFrames(); ++i) {
+            auto traj = this->trajectories[i];
+            Eigen::Matrix3f rot = traj.block(0,0,3,3);
+            auto angles = rot.eulerAngles(0, 1, 2); // todo check order
 
-        for (int j = 0; j < 6; ++j) {
-            intrinsics[6 * i + j] = this->intrinsics[j];
+            R[3 * i + 0] = angles(0);
+            R[3 * i + 1] = angles(1);
+            R[3 * i + 2] = angles(2);
+            T[3 * i + 0] = traj(3, 0);
+            T[3 * i + 1] = traj(3, 1);
+            T[3 * i + 2] = traj(3, 2);
+
+            for (int j = 0; j < 6; ++j) {
+                intrinsics[6 * i + j] = this->intrinsics[j];
+            }
         }
+    } else {
+        // todo init from procrutes
     }
 
     for (int i = 0; i < this->getNumPoints(); ++i) {
