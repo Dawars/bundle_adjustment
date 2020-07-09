@@ -36,8 +36,9 @@ void BundleAdjustment::createProblem() {
     for (int i = 0; i < dataset->getNumObservations(); ++i) {
 
         // get camera for observation
-        size_t camIndex = dataset->getObsCam(i);
-        size_t pointIndex = dataset->getObsPoint(i);
+        int camIndex = dataset->getObsCam(i);
+        int pointIndex = dataset->getObsPoint(i);
+        if (pointIndex == -1) { continue; } // no 3d point to 2d point
 
         Eigen::Vector3f obs;
         obs << observations[i].x, observations[i].y, 1.f;
