@@ -37,4 +37,7 @@ public:
     int getNumPoints() const;
     int getNumObservations() const;
     int getNumFrames() const;
+    std::vector<std::vector<cv::KeyPoint>> getKeyPoints() const;
+    std::vector<int> getObsCam() const;
+    std::vector<int> getObsPoint() const;
 };
