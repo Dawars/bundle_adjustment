@@ -182,9 +182,9 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
     for (int i = 0; i < this->getNumPoints(); ++i) {
         // todo init from procrutes
 
-//        X[3*i + 0] = u;
-//        X[3*i + 1] = v;
-//        X[3*i + 2] = depthImages[frameId].at<double>(u, v);
+        X[3*i + 0] = 0;
+        X[3*i + 1] = 0;
+        X[3*i + 2] = 1;
 
     }
 }
