@@ -89,7 +89,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     auto extractor = SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.7}}};
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.7},
+                                                                                 {"ransacEps", 1e1}}};
 
     VirtualSensor sensor{};
     sensor.Init(datasetDir);

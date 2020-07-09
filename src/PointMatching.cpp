@@ -33,7 +33,7 @@ void OnlinePointMatcher::matchKeypoints() {
     std::cout << "Matching points" << std::endl;
 
     const float ratio_thresh = params["ratioThreshold"];
-    const float eps = 1e1; // todo pass it through params
+    const float eps = params["ransacEps"];
 
     int num_frames = this->keypoints.size();
     int totalPointsUntilFrame[num_frames];
