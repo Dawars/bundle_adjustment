@@ -199,10 +199,6 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             T[3 * i + 1] = estimatedPose(1,4);
             T[3 * i + 2] = estimatedPose(2,4);
 
-            matching_source_points.resize(0);
-            matching_target_points.resize(0);
-            target_points_indices.resize(0);
-            target_points.resize(0);
         }
     }
 }

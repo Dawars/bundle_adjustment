@@ -47,7 +47,7 @@ void OnlinePointMatcher::matchKeypoints(std::vector<cv::Mat> & depthImages) {
         for(int j=0; j<num_current_points; j++) {
             x.push_back(kps[j].pt.x);
             y.push_back(kps[j].pt.y);
-            z.push_back(1); //depthImages[i].at<double>(kps[j].pt.x, kps[j].pt.y
+            z.push_back(1); //depthImages[i].at<double>(kps[j].pt.x, kps[j].pt.y)
         }
         num_observations += num_current_points;
     }
