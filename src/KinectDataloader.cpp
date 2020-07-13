@@ -7,13 +7,16 @@
 #include "bundleadjust/HarrisDetector.h"
 #include "bundleadjust/ShiTomasiDetector.h"
 #include "bundleadjust/SiftDetector.h"
-#include "VirtualSensor.h"
+#include "bundleadjust/ProcrustesAligner.h"
 
+#include "VirtualSensor.h"
 
 #include "opencv2/features2d.hpp"
 #include "opencv2/xfeatures2d.hpp"
+#include <ceres/rotation.h>
 
 using namespace cv::xfeatures2d;
+
 
 void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
 
@@ -38,8 +41,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 //    HarrisDetector detector;
 //    ShiTomasiDetector detector;
 
-    auto detector = SIFT::create(); // TODO: Extend and use FeatureDetector wrapper
-    auto extractor = SIFT::create();
+    auto detector = cv::SIFT::create(); // TODO: Extend and use FeatureDetector wrapper
+    auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
     correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.7}}};
@@ -65,7 +68,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
         correspondenceFinder->extractKeypoints(color);
     }
 
-    correspondenceFinder->matchKeypoints();
+    correspondenceFinder->matchKeypoints(depthImages);
 
     // TODO: depth test
 
@@ -131,12 +134,75 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         }
     }
 
-    for (int i = 0; i < this->getNumPoints(); ++i) {
-        // todo init from procrutes
+    const int origin_frame = this->getNumFrames() / 2;
+    std::vector<Eigen::Vector3f> source_points;
+    std::vector<int> source_points_indices;
 
-//        X[3*i + 0] = u;
-//        X[3*i + 1] = v;
-//        X[3*i + 2] = depthImages[frameId].at<double>(u, v);
+    // Get all the key points from the origin frame
+    for(int i=0; i<this->correspondenceFinder->getNumObservations(); i++) {
+        if(this->correspondenceFinder->obs_cam[i] == origin_frame && this->correspondenceFinder->obs_point[i] != -1) {
+            Eigen::Vector3f p;
+            p << correspondenceFinder->x[i], correspondenceFinder->y[i], correspondenceFinder->z[i];
+            source_points.push_back(p);
+            source_points_indices.push_back(correspondenceFinder->obs_point[i]);
+        }
+    }
 
+
+    for (int i=0; i<this->getNumFrames(); i++) {
+        if(i == origin_frame) {
+            R[3 * i + 0] = 0;
+            R[3 * i + 1] = 0;
+            R[3 * i + 2] = 0;
+            T[3 * i + 0] = 0;
+            T[3 * i + 1] = 0;
+            T[3 * i + 2] = 0;
+        } else {
+            std::vector<Eigen::Vector3f> target_points;
+            std::vector<int> target_points_indices;
+
+            // get all the key points from the target frame
+            for(int j=0; j<this->correspondenceFinder->getNumObservations(); j++) {
+                if(this->correspondenceFinder->obs_cam[j] == i && this->correspondenceFinder->obs_point[j] != -1) {
+                    Eigen::Vector3f p;
+                    p << correspondenceFinder->x[j], correspondenceFinder->y[j], correspondenceFinder->z[j];
+                    target_points.push_back(p);
+                    target_points_indices.push_back(correspondenceFinder->obs_point[j]);
+                }
+            }
+
+            // remove all the key points that aren't in
+            std::vector<Eigen::Vector3f> matching_source_points;
+            std::vector<Eigen::Vector3f> matching_target_points;
+            for(int j=0; j<source_points.size(); j++) {
+                for(int k=0; k<target_points.size(); k++) {
+                    if(source_points_indices[j] == target_points_indices[k]) {
+                        matching_source_points.push_back(source_points[j]);
+                        matching_target_points.push_back(target_points[k]);
+                        break;
+                    }
+                }
+            }
+
+            ProcrustesAligner aligner;
+	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(source_points, target_points);
+            Eigen::Matrix<float, 3, 3> rotation_matrix;
+            rotation_matrix << rotation_matrix(0,0), rotation_matrix(0,1), rotation_matrix(0,2),
+                               rotation_matrix(1,0), rotation_matrix(1,1), rotation_matrix(1,2),
+                               rotation_matrix(2,0), rotation_matrix(2,1), rotation_matrix(2,2);
+            Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
+
+            R[3 * i + 0] = r.axis()(0);
+            R[3 * i + 1] = r.axis()(1);
+            R[3 * i + 2] = r.axis()(2);
+            T[3 * i + 0] = estimatedPose(0,4);
+            T[3 * i + 1] = estimatedPose(1,4);
+            T[3 * i + 2] = estimatedPose(2,4);
+
+            matching_source_points.resize(0);
+            matching_target_points.resize(0);
+            target_points_indices.resize(0);
+            target_points.resize(0);
+        }
     }
 }

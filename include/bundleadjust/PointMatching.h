@@ -13,14 +13,21 @@ class OnlinePointMatcher {
 
     std::unordered_map<std::string, float> params;
 
-    std::vector<std::vector<cv::KeyPoint>> keypoints; // list of keypoints for every frame processed so far
+     // list of keypoints for every frame processed so far
     std::vector<cv::Mat> descriptors;
 
     int numPoints3d = 0; // 3d points
-    std::vector<int> obs_cam; //  ith 2d point on jth camera
-    std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
+
 
 public:
+    std::vector<std::vector<cv::KeyPoint>> keypoints;
+    std::vector<int> obs_cam; //  ith 2d point on jth camera
+    std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<double> z;
+
+    
     OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,
                        const cv::Ptr<cv::DescriptorExtractor> extractor,
                        const cv::Ptr<cv::DescriptorMatcher>  matcher,
@@ -28,7 +35,7 @@ public:
 
     void extractKeypoints(const cv::Mat currentFrame);
 
-    void matchKeypoints();
+    void matchKeypoints(std::vector<cv::Mat> & depthImages);
 
     std::vector<cv::Point2f> getObservations() const;
 
@@ -37,4 +44,5 @@ public:
     int getNumPoints() const;
     int getNumObservations() const;
     int getNumFrames() const;
+
 };

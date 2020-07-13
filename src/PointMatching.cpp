@@ -1,8 +1,10 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/xfeatures2d.hpp>
+#include <tuple>
 
 #include "bundleadjust/PointMatching.h"
+#include "bundleadjust/ProcrustesAligner.h"
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -29,7 +31,7 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 
 }
 
-void OnlinePointMatcher::matchKeypoints() {
+void OnlinePointMatcher::matchKeypoints(std::vector<cv::Mat> & depthImages) {
     std::cout << "Matching points" << std::endl;
 
     const float ratio_thresh = params["ratioThreshold"];
@@ -39,9 +41,14 @@ void OnlinePointMatcher::matchKeypoints() {
     int num_observations = 0;
     for (size_t i = 0; i < num_frames; ++i) {
         totalPointsUntilFrame[i] = num_observations; // excluding current frame
-
         auto &kps = this->keypoints[i];
         auto num_current_points = kps.size();
+
+        for(int j=0; j<num_current_points; j++) {
+            x.push_back(kps[j].pt.x);
+            y.push_back(kps[j].pt.y);
+            z.push_back(1); //depthImages[i].at<double>(kps[j].pt.x, kps[j].pt.y
+        }
         num_observations += num_current_points;
     }
 
@@ -67,10 +74,9 @@ void OnlinePointMatcher::matchKeypoints() {
             std::vector<std::vector<cv::DMatch>> knn_matches; // mask not supported for flann
             matcher->knnMatch(desc, knn_matches, 2);
 
-
             for (int i = 0; i < knn_matches.size(); ++i) {
                 std::vector<DMatch> &match = knn_matches[i];
-
+                
                 // ratio test
                 if (match[0].distance < ratio_thresh * match[1].distance) {
 
@@ -89,6 +95,7 @@ void OnlinePointMatcher::matchKeypoints() {
             }
         }
     }
+
     std::cout << numPoints3d << std::endl;
 }
 
@@ -103,6 +110,18 @@ std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
 
     return points;
 }
+
+// std::vector<std::tuple<cv::Point2f, cv::Point2f>> OnlinePointMatcher::get_matching_observations_between_frames(const int base_frame, const int other_frame) const {
+//     std::vector<std::tuple<cv::Point2f, cv::Point2f>> points;
+
+//     for (auto &frame : this->keypoints) {
+//         for (auto &keypoint : frame) {
+//             points.push_back(keypoint.pt);
+//         }
+//     }
+
+//     return points;
+// }
 
 int OnlinePointMatcher::getObsCam(int index) const {
     return this->obs_cam[index];
