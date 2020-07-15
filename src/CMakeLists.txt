@@ -18,11 +18,13 @@ add_library(BundleAdjustment ${HEADER_LIST}
         PointMatching.cpp
         ../include/bundleadjust/Dataloader.h
         )
+target_compile_features(BundleAdjustment PRIVATE cxx_std_17)
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
 
 target_include_directories(BundleAdjustment PRIVATE ../libs/eigen)
 
+target_link_libraries(BundleAdjustment PRIVATE fmt::fmt)
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries(BundleAdjustment PRIVATE OpenMP::OpenMP_CXX)

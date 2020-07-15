@@ -4,6 +4,7 @@ project(BundleAdjustment VERSION 0.1 DESCRIPTION "BundleAdjustment project for 3
 find_package(OpenMP)
 find_package(OpenCV REQUIRED)
 
+add_subdirectory(libs/fmt)
 #add_subdirectory(libs/Sophus)
 add_subdirectory(libs/ceres-solver)
 
