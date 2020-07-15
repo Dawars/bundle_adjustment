@@ -25,7 +25,8 @@ public:
     std::vector<std::vector<cv::KeyPoint>> keypoints;
     std::vector<int> obs_cam; //  ith 2d point on jth camera
     std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
-    std::vector<std::set<int>> frame_obs; //  list of observations in frame
+    std::vector<std::set<int>> point_obs; //  ith 3d point corresponds to jth 2d point
+    std::vector<std::set<int>> cam_obs; //  list of observations in frame
 
 
     OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,

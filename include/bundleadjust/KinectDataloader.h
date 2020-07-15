@@ -40,5 +40,7 @@ private:
     OnlinePointMatcher* correspondenceFinder;
     Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
     std::vector<double> x, y, z;
+
+    std::vector<Eigen::Matrix4f> estimatedPoses;
 };
 

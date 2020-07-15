@@ -33,12 +33,16 @@ void BundleAdjustment::createProblem() {
     std::cout << "Creating problem" << std::endl;
     auto observations = dataset->getObservations();
 
+    int invalidObs = 0;
     for (int i = 0; i < dataset->getNumObservations(); ++i) {
 
         // get camera for observation
         int camIndex = dataset->getObsCam(i);
         int pointIndex = dataset->getObsPoint(i);
-        if (pointIndex == -1) { continue; } // no 3d point to 2d point
+        if (pointIndex == -1) {
+            invalidObs++; // no 3d point to 2d point
+            continue;
+        }
 
         Eigen::Vector3f obs;
         obs << observations[i].x, observations[i].y, 1.f;
@@ -64,6 +68,7 @@ void BundleAdjustment::createProblem() {
             // todo add depth loss
         }
     }
+    std::cout << "Invalid observations: " << invalidObs << " out of " << dataset->getNumObservations() << std::endl;
     std::cout << "Creating problem end" << std::endl;
 
 }
@@ -77,6 +82,22 @@ void BundleAdjustment::solve() {
     std::cout << summary.FullReport() << std::endl;
 
     std::cout << "Solving problem end" << std::endl;
+}
+
+
+void BundleAdjustment::writeMesh(std::string filename) {
+
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        file << "OFF" << std::endl;
+        file << dataset->getNumPoints() << " 0 0" << std::endl;
+
+        for (int i = 0; i < dataset->getNumPoints(); ++i) {
+            auto point = getPoint(i);
+
+            file << point[0] << " " << point[1] << " " << point[2] << std::endl;
+        }
+    }
 }
 
 double *BundleAdjustment::getRotation(size_t cameraIndex) {

@@ -43,7 +43,7 @@ void OnlinePointMatcher::matchKeypoints() {
     int totalPointsUntilFrame[num_frames];
     int num_observations = 0;
 
-    frame_obs.resize(num_frames, std::set<int>());
+    cam_obs.resize(num_frames, std::set<int>());
 
     for (size_t i = 0; i < num_frames; ++i) {
         totalPointsUntilFrame[i] = num_observations; // excluding current frame
@@ -52,7 +52,7 @@ void OnlinePointMatcher::matchKeypoints() {
         auto num_current_points = kps.size();
 
         for (int j = 0; j < keypoints[i].size(); ++j) {
-            frame_obs[i].insert(totalPointsUntilFrame[i] + j);
+            cam_obs[i].insert(totalPointsUntilFrame[i] + j);
         }
 
         num_observations += num_current_points;
@@ -123,15 +123,20 @@ void OnlinePointMatcher::matchKeypoints() {
                         filtered++;
                         auto &obs = matches[i];
                         // keep track of 3D points (1 3D point corresponding to all 2D matches)
-                        int *other3D = &obs_point[totalPointsUntilFrame[otherFrameId] + obs.queryIdx];
-                        int *current3D = &obs_point[totalPointsUntilFrame[frameId] + obs.trainIdx];
+                        int otherObsIndex = totalPointsUntilFrame[otherFrameId] + obs.queryIdx;
+                        int currentObsIndex = totalPointsUntilFrame[frameId] + obs.trainIdx;
+                        int *other3D = &obs_point[otherObsIndex];
+                        int *current3D = &obs_point[currentObsIndex];
                         if (*other3D == -1) { // 2d observation doesn't correspond to 3D point yet
                             int newPoint = this->numPoints3d++;
                             *other3D = newPoint;
                             *current3D = newPoint;
+                            point_obs.push_back(std::set<int>());
                         } else { // 2D point has already been matched to 3D point, assign new 2D point to it as well
                             *current3D = *other3D;
                         }
+                        point_obs[*other3D].insert(otherObsIndex);
+                        point_obs[*other3D].insert(currentObsIndex);
                     }
                 }
 //                std::cout << all << " " << filtered << std::endl;
