@@ -200,8 +200,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             ProcrustesAligner aligner;
 	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
             Eigen::Matrix<float, 3, 3> rotation_matrix;
-            rotation_matrix << estimatedPose(0,0), estimatedPose(0,1), rotation_matrix(0,2),
-                               estimatedPose(1,0), estimatedPose(1,1), rotation_matrix(1,2),
+            rotation_matrix << estimatedPose(0,0), estimatedPose(0,1), estimatedPose(0,2),
+                               estimatedPose(1,0), estimatedPose(1,1), estimatedPose(1,2),
                                estimatedPose(2,0), estimatedPose(2,1), estimatedPose(2,2);
             Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
