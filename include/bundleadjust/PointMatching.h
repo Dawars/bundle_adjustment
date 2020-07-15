@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <set>
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Dense>
@@ -24,9 +25,7 @@ public:
     std::vector<std::vector<cv::KeyPoint>> keypoints;
     std::vector<int> obs_cam; //  ith 2d point on jth camera
     std::vector<int> obs_point; //  ith 2d point corresponds to jth 3d point
-    std::vector<double> x;
-    std::vector<double> y;
-    std::vector<double> z;
+    std::vector<std::set<int>> frame_obs; //  list of observations in frame
 
 
     OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,
@@ -36,7 +35,7 @@ public:
 
     void extractKeypoints(const cv::Mat currentFrame);
 
-    void matchKeypoints(std::vector<cv::Mat> & depthImages, Eigen::Matrix3f & intrinsics);
+    void matchKeypoints();
 
     std::vector<cv::Point2f> getObservations() const;
 

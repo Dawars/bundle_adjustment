@@ -33,7 +33,7 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
 
 }
 
-void OnlinePointMatcher::matchKeypoints(std::vector<cv::Mat> & depthImages, Eigen::Matrix3f & instrinsicsInv) {
+void OnlinePointMatcher::matchKeypoints() {
     std::cout << "Matching points" << std::endl;
 
     const float ratio_thresh = params["ratioThreshold"];
@@ -42,37 +42,19 @@ void OnlinePointMatcher::matchKeypoints(std::vector<cv::Mat> & depthImages, Eige
     int num_frames = this->keypoints.size();
     int totalPointsUntilFrame[num_frames];
     int num_observations = 0;
+
+    frame_obs.resize(num_frames, std::set<int>());
+
     for (size_t i = 0; i < num_frames; ++i) {
         totalPointsUntilFrame[i] = num_observations; // excluding current frame
 
         auto &kps = this->keypoints[i];
         auto num_current_points = kps.size();
 
-        const int frame_width = depthImages[i].size[1];
-        const int frame_height = depthImages[i].size[0];
-
-        // build x, y, z observations
-        for(int j=0; j<num_current_points; j++) {
-            double x_obs = kps[j].pt.x;
-            double y_obs = kps[j].pt.y;
-
-            Eigen::Vector3f image_point;
-            image_point << x_obs, y_obs, 1;
-
-            assert(x_obs <= frame_width);
-            assert(y_obs <= frame_height);
-
-            double depth = depthImages[i].at<double>(y_obs, x_obs);
-            Eigen::Vector3f cameraLine = instrinsicsInv * image_point;
-            Eigen::Vector4f cameraPoint; // Andrew: don't think homogenous will be necessary
-            cameraPoint << depth * cameraLine, 1;
-
-            //std::cout << cameraPoint << "\n\n";
-
-            x.push_back(cameraPoint(0));
-            y.push_back(cameraPoint(1));
-            z.push_back(depth);
+        for (int j = 0; j < keypoints[i].size(); ++j) {
+            frame_obs[i].insert(totalPointsUntilFrame[i] + j);
         }
+
         num_observations += num_current_points;
     }
 

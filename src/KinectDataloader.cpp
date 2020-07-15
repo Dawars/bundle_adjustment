@@ -97,27 +97,31 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     VirtualSensor sensor{};
     if(!sensor.Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
 
-    auto intrinsics = sensor.GetColorIntrinsics();
-    this->intrinsics[0] = intrinsics(0, 0);
-    this->intrinsics[1] = intrinsics(1, 1);
-    this->intrinsics[2] = intrinsics(0, 2);
-    this->intrinsics[3] = intrinsics(1, 2);
-    this->intrinsics[4] = 0;
-    this->intrinsics[5] = 0;
+    this->intrinsics = sensor.GetColorIntrinsics();
 
+//    for (int i = 0; i < 3 && sensor.ProcessNextFrame(); ++i) {
     while (sensor.ProcessNextFrame()) {
         auto color = sensor.GetColor();
         auto depth = sensor.GetDepth();
-        // todo filter depth map
+
+        // Future improvement https://vision.unipv.it/corsi/computervision/secondchoice/0279%20Depth%20Image%20Enhancement%20for%20Kinect%20Using%20Region%20Growing%20and%20Bilateral%20-%20Copia.pdf
+        cv::Mat depthFiltered;
+        cv::bilateralFilter(depth, depthFiltered, 5, 3, 1.2);
+
+//        cv::imshow("depth", depth);
+//        cv::imshow("depthFiltered", depthFiltered);
+//        cv::waitKey(0);
+
         colorImages.push_back(color);
-        depthImages.push_back(depth);
+        depthImages.push_back(depthFiltered);
 
         correspondenceFinder->extractKeypoints(color);
     }
 
-    Eigen::Matrix3f depthIntrinsicsInv = sensor.GetDepthIntrinsics().inverse();
-    correspondenceFinder->matchKeypoints(depthImages, depthIntrinsicsInv);
+    correspondenceFinder->matchKeypoints();
 //    visualizeMatch(color1, color2, correspondenceFinder);
+
+    setupPointDepth();
     // TODO: depth test
 
     // TODO: visualize matches
@@ -168,56 +172,94 @@ cv::Mat KinectDataloader::getDepth(int frameId) const {
     return this->depthImages[frameId];
 }
 
-void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
-    for (int i = 0; i < this->getNumFrames(); ++i) {
-        R[3 * i + 0] = 0; // todo init from procrutes
-        R[3 * i + 1] = 0;
-        R[3 * i + 2] = 0;
-        T[3 * i + 0] = 0;
-        T[3 * i + 1] = 0;
-        T[3 * i + 2] = 0;
+void KinectDataloader::setupPointDepth() {
+    Eigen::Matrix3f instrinsicsInv = this->intrinsics.inverse();
 
-        for (int j = 0; j < 6; ++j) {
-            intrinsics[6 * i + j] = this->intrinsics[j];
+    for (int i = 0; i < getNumFrames(); ++i) {
+        auto &kps = this->correspondenceFinder->keypoints[i];
+        auto num_current_points = kps.size();
+
+        const int frame_width = depthImages[i].size[1];
+        const int frame_height = depthImages[i].size[0];
+
+        // build x, y, z observations
+        for (int j = 0; j < num_current_points; j++) {
+            double x_obs = kps[j].pt.x;
+            double y_obs = kps[j].pt.y;
+
+            Eigen::Vector3f image_point;
+            image_point << x_obs, y_obs, 1;
+
+            assert(x_obs <= frame_width);
+            assert(y_obs <= frame_height);
+
+            double depth = depthImages[i].at<double>(y_obs, x_obs);
+            Eigen::Vector3f cameraLine = instrinsicsInv * image_point;
+            Eigen::Vector4f cameraPoint; // Andrew: don't think homogenous will be necessary
+            cameraPoint << depth * cameraLine, 1;
+
+            //std::cout << cameraPoint << "\n\n";
+
+            // needs to be in camera space so that units match (x,y) & z
+            x.push_back(cameraPoint(0));
+            y.push_back(cameraPoint(1));
+            z.push_back(depth);
         }
     }
+}
 
-    const int origin_frame = this->getNumFrames() / 2; // One should be able to choose if they know the optimal frame
+void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+    for (int i = 0; i < this->getNumFrames(); ++i) {
+        intrinsics[6 * i + 0] = this->intrinsics(0, 0);
+        intrinsics[6 * i + 1] = this->intrinsics(1, 1);
+        intrinsics[6 * i + 2] = this->intrinsics(0, 2);
+        intrinsics[6 * i + 3] = this->intrinsics(1, 2);
+        intrinsics[6 * i + 4] = 0;
+        intrinsics[6 * i + 5] = 0;
+    }
+
+    const int origin_frame = 0; // One should be able to choose if they know the optimal frame
     std::vector<Eigen::Vector3f> source_points;
     std::vector<int> source_points_indices;
 
     // Get all the key points from the origin frame coords (x,y,z) and point index
-    for(int i=0; i<this->correspondenceFinder->getNumObservations(); i++) {
-        if(this->correspondenceFinder->obs_cam[i] == origin_frame && this->correspondenceFinder->obs_point[i] != -1) {
-            Eigen::Vector3f p;
-            p << correspondenceFinder->x[i], correspondenceFinder->y[i], correspondenceFinder->z[i];
-            source_points.push_back(p);
-            source_points_indices.push_back(correspondenceFinder->obs_point[i]);
-        }
+
+    for(int obsIndex : correspondenceFinder->frame_obs[origin_frame]) {
+        int pointIndex = correspondenceFinder->obs_point[obsIndex];
+
+        if(pointIndex == -1) { continue; }
+
+        Eigen::Vector3f p;
+        p << x[pointIndex], y[pointIndex], z[pointIndex];
+        source_points.push_back(p);
+        source_points_indices.push_back(pointIndex);
     }
 
-
-    for (int i=0; i<this->getNumFrames(); i++) {
-        if(i == origin_frame) {
-            R[3 * i + 0] = 0;
-            R[3 * i + 1] = 0;
-            R[3 * i + 2] = 0;
-            T[3 * i + 0] = 0;
-            T[3 * i + 1] = 0;
-            T[3 * i + 2] = 0;
+    ProcrustesAligner aligner;
+    for (int frameId=0; frameId < this->getNumFrames(); frameId++) {
+        if(frameId == origin_frame) {
+            R[3 * frameId + 0] = 0;
+            R[3 * frameId + 1] = 0;
+            R[3 * frameId + 2] = 0;
+            T[3 * frameId + 0] = 0;
+            T[3 * frameId + 1] = 0;
+            T[3 * frameId + 2] = 0;
         } else {
             std::vector<Eigen::Vector3f> target_points;
             std::vector<int> target_points_indices;
 
             // get all the key points from the target frame
-            for(int j=0; j<this->correspondenceFinder->getNumObservations(); j++) {
-                if(this->correspondenceFinder->obs_cam[j] == i && this->correspondenceFinder->obs_point[j] != -1) {
-                    Eigen::Vector3f p;
-                    p << correspondenceFinder->x[j], correspondenceFinder->y[j], correspondenceFinder->z[j];
-                    target_points.push_back(p);
-                    target_points_indices.push_back(correspondenceFinder->obs_point[j]);
-                }
+            for(int obsIndex : correspondenceFinder->frame_obs[frameId]) {
+                int pointIndex = correspondenceFinder->obs_point[obsIndex];
+
+                if(pointIndex == -1) { continue; }
+
+                Eigen::Vector3f p;
+                p << x[pointIndex], y[pointIndex], z[pointIndex];
+                target_points.push_back(p);
+                target_points_indices.push_back(pointIndex);
             }
+
             // remove all the key points that aren't in both vectors and exclude points with negative infinity depth
             std::vector<Eigen::Vector3f> matching_source_points;
             std::vector<Eigen::Vector3f> matching_target_points;
@@ -236,29 +278,27 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                     }
                 }
             }
+            std::cout << matching_target_points.size() << std::endl;
 
-            ProcrustesAligner aligner;
 	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
             Eigen::Matrix3f rotation_matrix;
-            rotation_matrix << estimatedPose(0,0), estimatedPose(0,1), estimatedPose(0,2),
-                               estimatedPose(1,0), estimatedPose(1,1), estimatedPose(1,2),
-                               estimatedPose(2,0), estimatedPose(2,1), estimatedPose(2,2);
+            rotation_matrix << estimatedPose.block(0, 0, 3, 3);
             Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-            //std::cout << estimatedPose << "\n\n";
+            std::cout << estimatedPose << "\n";
+            std::cout << r.axis() << "\n\n";
 
-
-            R[3 * i + 0] = r.axis()(0);
-            R[3 * i + 1] = r.axis()(1);
-            R[3 * i + 2] = r.axis()(2);
-            T[3 * i + 0] = estimatedPose(0,3);
-            T[3 * i + 1] = estimatedPose(1,3);
-            T[3 * i + 2] = estimatedPose(2,3);
+            R[3 * frameId + 0] = r.axis()(0);
+            R[3 * frameId + 1] = r.axis()(1);
+            R[3 * frameId + 2] = r.axis()(2);
+            T[3 * frameId + 0] = estimatedPose(0, 3);
+            T[3 * frameId + 1] = estimatedPose(1, 3);
+            T[3 * frameId + 2] = estimatedPose(2, 3);
         }
     }
 
     for (int i = 0; i < this->getNumPoints(); ++i) {
-        // todo init from procrutes
+        // todo init from procrutes based on estimated extrinsics
 
         X[3*i + 0] = 0;
         X[3*i + 1] = 0;

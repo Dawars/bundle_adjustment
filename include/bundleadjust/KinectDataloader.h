@@ -36,7 +36,9 @@ public:
 
 private:
 //    std::vector<Camera> cameras;
+    void setupPointDepth();
     OnlinePointMatcher* correspondenceFinder;
-    double intrinsics[6]; // fx, fy, ox, oy, k1, k2
+    Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
+    std::vector<double> x, y, z;
 };
 
