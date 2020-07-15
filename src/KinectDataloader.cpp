@@ -95,7 +95,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
                                                                                  {"ransacEps", 1e1}}};
 
     VirtualSensor sensor{};
-    sensor.Init(datasetDir);
+    if(!sensor.Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
 
     auto intrinsics = sensor.GetColorIntrinsics();
     this->intrinsics[0] = intrinsics(0, 0);
