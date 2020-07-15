@@ -67,6 +67,8 @@ void OnlinePointMatcher::matchKeypoints(std::vector<cv::Mat> & depthImages, Eige
             Eigen::Vector4f cameraPoint; // Andrew: don't think homogenous will be necessary
             cameraPoint << depth * cameraLine, 1;
 
+            //std::cout << cameraPoint << "\n\n";
+
             x.push_back(cameraPoint(0));
             y.push_back(cameraPoint(1));
             z.push_back(depth);

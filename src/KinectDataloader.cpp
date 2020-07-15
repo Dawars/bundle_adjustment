@@ -45,7 +45,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.7}}};
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.5}}};
 
     VirtualSensor sensor{};
     sensor.Init(datasetDir);
@@ -185,6 +185,9 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                         
                         matching_source_points.push_back(source_points[j]);
                         matching_target_points.push_back(target_points[k]);
+
+                        //std::cout << source_points[j](0) << " " << source_points[j](1) << " " << source_points[j](2) << "\n\n";
+
                         break;
                     }
                 }
@@ -198,7 +201,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                                estimatedPose(2,0), estimatedPose(2,1), estimatedPose(2,2);
             Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-            // std::cout << estimatedPose << "\n\n";
+            //std::cout << estimatedPose << "\n\n";
 
 
             R[3 * i + 0] = r.axis()(0);
