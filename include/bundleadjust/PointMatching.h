@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <opencv2/opencv.hpp>
+#include <Eigen/Dense>
 
 #include "bundleadjust/FeatureDetector.h"
 
@@ -35,7 +36,7 @@ public:
 
     void extractKeypoints(const cv::Mat currentFrame);
 
-    void matchKeypoints(std::vector<cv::Mat> & depthImages);
+    void matchKeypoints(std::vector<cv::Mat> & depthImages, Eigen::Matrix3f & intrinsics);
 
     std::vector<cv::Point2f> getObservations() const;
 

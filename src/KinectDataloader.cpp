@@ -68,7 +68,9 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
         correspondenceFinder->extractKeypoints(color);
     }
 
-    correspondenceFinder->matchKeypoints(depthImages);
+    Eigen::Matrix3f depthIntrinsicsInv = sensor.GetDepthIntrinsics().inverse();
+
+    correspondenceFinder->matchKeypoints(depthImages, depthIntrinsicsInv);
 
     // TODO: depth test
 
@@ -143,6 +145,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         if(this->correspondenceFinder->obs_cam[i] == origin_frame && this->correspondenceFinder->obs_point[i] != -1) {
             Eigen::Vector3f p;
             p << correspondenceFinder->x[i], correspondenceFinder->y[i], correspondenceFinder->z[i];
+            
             source_points.push_back(p);
             source_points_indices.push_back(correspondenceFinder->obs_point[i]);
         }
@@ -171,34 +174,45 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 }
             }
 
-            // remove all the key points that aren't in
+            // remove all the key points that aren't in both vectors
             std::vector<Eigen::Vector3f> matching_source_points;
             std::vector<Eigen::Vector3f> matching_target_points;
             for(int j=0; j<source_points.size(); j++) {
                 for(int k=0; k<target_points.size(); k++) {
+                    
                     if(source_points_indices[j] == target_points_indices[k]) {
+
+                        if(source_points[j](2) < -9999) {
+                            break;
+                        }
+
+                        if(target_points[k](2) < -9999) {
+                            break;
+                        }
                         matching_source_points.push_back(source_points[j]);
                         matching_target_points.push_back(target_points[k]);
+
                         break;
                     }
                 }
             }
 
             ProcrustesAligner aligner;
-	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(source_points, target_points);
+	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
             Eigen::Matrix<float, 3, 3> rotation_matrix;
-            rotation_matrix << rotation_matrix(0,0), rotation_matrix(0,1), rotation_matrix(0,2),
-                               rotation_matrix(1,0), rotation_matrix(1,1), rotation_matrix(1,2),
-                               rotation_matrix(2,0), rotation_matrix(2,1), rotation_matrix(2,2);
+            rotation_matrix << estimatedPose(0,0), estimatedPose(0,1), estimatedPose(0,2),
+                               estimatedPose(1,0), estimatedPose(1,1), estimatedPose(1,2),
+                               estimatedPose(2,0), estimatedPose(2,1), estimatedPose(2,2);
             Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-            R[3 * i + 0] = r.axis()(0);
-            R[3 * i + 1] = r.axis()(1);
-            R[3 * i + 2] = r.axis()(2);
-            T[3 * i + 0] = estimatedPose(0,4);
-            T[3 * i + 1] = estimatedPose(1,4);
-            T[3 * i + 2] = estimatedPose(2,4);
+            //std::cout << rotation_matrix << "\n\n";
 
+            // R[3 * i + 0] = r.axis()(0);
+            // R[3 * i + 1] = r.axis()(1);
+            // R[3 * i + 2] = r.axis()(2);
+            // T[3 * i + 0] = estimatedPose(0,3);
+            // T[3 * i + 1] = estimatedPose(1,3);
+            // T[3 * i + 2] = estimatedPose(2,3);
         }
     }
 }

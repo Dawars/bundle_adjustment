@@ -22,9 +22,6 @@ public:
 		estimatedPose.block(0,0, 3, 3) = rotation;
 		estimatedPose.block(0,3, 3, 1) = translation;
 
-
-		std::cout << estimatedPose << std::endl;
-
 		return estimatedPose;
 	}
 
