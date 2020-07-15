@@ -28,7 +28,7 @@ public:
     std::vector<double> y;
     std::vector<double> z;
 
-    
+
     OnlinePointMatcher(const cv::Ptr<cv::FeatureDetector> detector,
                        const cv::Ptr<cv::DescriptorExtractor> extractor,
                        const cv::Ptr<cv::DescriptorMatcher>  matcher,
@@ -45,5 +45,7 @@ public:
     int getNumPoints() const;
     int getNumObservations() const;
     int getNumFrames() const;
-
+    std::vector<std::vector<cv::KeyPoint>> getKeyPoints() const;
+    std::vector<int> getObsCam() const;
+    std::vector<int> getObsPoint() const;
 };
