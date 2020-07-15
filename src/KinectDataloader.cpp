@@ -69,7 +69,6 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     }
 
     Eigen::Matrix3f depthIntrinsicsInv = sensor.GetDepthIntrinsics().inverse();
-
     correspondenceFinder->matchKeypoints(depthImages, depthIntrinsicsInv);
 
     // TODO: depth test
@@ -136,16 +135,15 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         }
     }
 
-    const int origin_frame = this->getNumFrames() / 2;
+    const int origin_frame = this->getNumFrames() / 2; // One should be able to choose if they know the optimal frame
     std::vector<Eigen::Vector3f> source_points;
     std::vector<int> source_points_indices;
 
-    // Get all the key points from the origin frame
+    // Get all the key points from the origin frame coords (x,y,z) and point index
     for(int i=0; i<this->correspondenceFinder->getNumObservations(); i++) {
         if(this->correspondenceFinder->obs_cam[i] == origin_frame && this->correspondenceFinder->obs_point[i] != -1) {
             Eigen::Vector3f p;
             p << correspondenceFinder->x[i], correspondenceFinder->y[i], correspondenceFinder->z[i];
-            
             source_points.push_back(p);
             source_points_indices.push_back(correspondenceFinder->obs_point[i]);
         }
@@ -174,24 +172,19 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 }
             }
 
-            // remove all the key points that aren't in both vectors
+            float neg_inf = -std::numeric_limits<float>::infinity();
+
+            // remove all the key points that aren't in both vectors and exclude points with negative infinity depth
             std::vector<Eigen::Vector3f> matching_source_points;
             std::vector<Eigen::Vector3f> matching_target_points;
             for(int j=0; j<source_points.size(); j++) {
                 for(int k=0; k<target_points.size(); k++) {
-                    
                     if(source_points_indices[j] == target_points_indices[k]) {
-
-                        if(source_points[j](2) < -9999) {
-                            break;
-                        }
-
-                        if(target_points[k](2) < -9999) {
-                            break;
-                        }
+                        if(std::isinf(source_points[j](2))) break;
+                        if(std::isinf(target_points[k](2))) break;
+                        
                         matching_source_points.push_back(source_points[j]);
                         matching_target_points.push_back(target_points[k]);
-
                         break;
                     }
                 }
@@ -199,13 +192,14 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
             ProcrustesAligner aligner;
 	        Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
-            Eigen::Matrix<float, 3, 3> rotation_matrix;
+            Eigen::Matrix3f rotation_matrix;
             rotation_matrix << estimatedPose(0,0), estimatedPose(0,1), estimatedPose(0,2),
                                estimatedPose(1,0), estimatedPose(1,1), estimatedPose(1,2),
                                estimatedPose(2,0), estimatedPose(2,1), estimatedPose(2,2);
             Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-            //std::cout << rotation_matrix << "\n\n";
+            // std::cout << estimatedPose << "\n\n";
+
 
             R[3 * i + 0] = r.axis()(0);
             R[3 * i + 1] = r.axis()(1);
