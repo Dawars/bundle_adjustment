@@ -204,7 +204,7 @@ void KinectDataloader::setupPointDepth() {
             // needs to be in camera space so that units match (x,y) & z
             x.push_back(cameraPoint(0));
             y.push_back(cameraPoint(1));
-            z.push_back(depth);
+            z.push_back(cameraPoint(2));
         }
     }
 }
@@ -255,7 +255,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 if(pointIndex == -1) { continue; }
 
                 Eigen::Vector3f p;
-                p << x[pointIndex], y[pointIndex], z[pointIndex];
+                p << x[obsIndex], y[obsIndex], z[obsIndex];
                 target_points.push_back(p);
                 target_points_indices.push_back(pointIndex);
             }
