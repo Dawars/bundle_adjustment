@@ -1,6 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
-
+#include <iostream>
 class ProcrustesAligner {
 public:
 	Eigen::Matrix4f estimatePose(const std::vector<Eigen::Vector3f>& sourcePoints, const std::vector<Eigen::Vector3f>& targetPoints) {
@@ -8,6 +8,7 @@ public:
 		// We estimate the pose between source and target points using Procrustes algorithm.
 		// Our shapes have the same scale, therefore we don't estimate scale. We estimated rotation and translation
 		// from source points to target points.
+
 
 		auto sourceMean = computeMean(sourcePoints);
 		auto targetMean = computeMean(targetPoints);
