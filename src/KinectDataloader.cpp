@@ -297,9 +297,15 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
         // todo multiply with prev camera pose
-        R[3 * frameId + 0] = r.axis()(0);
-        R[3 * frameId + 1] = r.axis()(1);
-        R[3 * frameId + 2] = r.axis()(2);
+        if(frameId == origin_frame) {
+            R[3 * frameId + 0] = 0;
+            R[3 * frameId + 1] = 0;
+            R[3 * frameId + 2] = 0;
+        } else {
+            R[3 * frameId + 0] = r.axis()(0);
+            R[3 * frameId + 1] = r.axis()(1);
+            R[3 * frameId + 2] = r.axis()(2);
+        }
         T[3 * frameId + 0] = pose(0, 3);
         T[3 * frameId + 1] = pose(1, 3);
         T[3 * frameId + 2] = pose(2, 3);
