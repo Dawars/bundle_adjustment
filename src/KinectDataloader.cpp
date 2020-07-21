@@ -92,7 +92,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.5},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.35},
                                                                                  {"ransacEps", 1e1}}};
 
     VirtualSensor sensor{};
@@ -233,7 +233,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         if(pointIndex == -1) { continue; }
 
         Eigen::Vector3f p;
-        p << x[pointIndex], y[pointIndex], z[pointIndex];
+        p << x[obsIndex], y[obsIndex], z[obsIndex];
         source_points.push_back(p);
         source_points_indices.push_back(pointIndex);
     }
@@ -280,7 +280,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             }
             std::cout << frameId << ":  " << matching_target_points.size() << " points" << std::endl;
 
-            Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
+            
+            Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_source_points, matching_target_points);
             estimatedPoses[frameId] = estimatedPose;
         }
     }
@@ -291,9 +292,6 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         Eigen::Matrix3f rotation_matrix;
         rotation_matrix << pose.block(0, 0, 3, 3);
         Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
-
-            std::cout << estimatedPose << "\n";
-            std::cout << r.axis() << "\n\n";
 
         // todo multiply with prev camera pose
         R[3 * frameId + 0] = r.axis()(0);
@@ -336,10 +334,39 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
         auto point3D = pose * point;
 
-        std::cout << point3D << std::endl;
-
         X[3*i + 0] = point3D(0);
         X[3*i + 1] = point3D(1);
         X[3*i + 2] = point3D(2);
     }
 }
+
+
+Eigen::Vector3d KinectDataloader::getPointColor(int point_index) const {
+    Eigen::Vector3d rgb_vector;
+    rgb_vector << 0, 0, 0;
+
+    for(int i=0; i<this->getNumObservations(); i++) {
+        int obs_point = getObsPoint(i);
+        
+        if(obs_point == point_index) {
+            int cam_idx  = getObsCam(i);            
+            double x_pix = x[i] / z[i];
+            double y_pix = y[i] / z[i];
+
+            if(std::isnan(x_pix) || std::isnan(y_pix)) {
+                return rgb_vector;
+            }
+            double b = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[0];
+            double g = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[1];
+            double r = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[2];
+            rgb_vector << b, g, r;
+            return rgb_vector;
+        }
+    }
+
+    return rgb_vector;
+}
+
+
+
+

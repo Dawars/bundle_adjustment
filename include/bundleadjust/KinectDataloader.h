@@ -19,12 +19,15 @@ public:
     std::vector<cv::Mat> colorImages;
     std::vector<cv::Mat> depthImages;
 
+    Eigen::Vector3d getPointColor(int point_index) const override;
+
     inline int getObsCam(int index) const override;
     inline int getObsPoint(int index) const override;
     inline int getNumPoints() const override;
     inline std::vector<cv::Point2f> getObservations() const override;
     inline int getNumObservations() const override;
     inline int getNumFrames() const override;
+    
 
     inline bool isColorAvailable() const override;
     inline bool isDepthAvailable() const override;

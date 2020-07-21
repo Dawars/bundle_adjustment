@@ -3,8 +3,8 @@
 //
 
 #pragma once
-
 #include <opencv2/opencv.hpp>
+#include <Eigen/Dense>
 
 class Dataloader {
 public:
@@ -15,6 +15,7 @@ public:
     inline virtual int getNumPoints() const = 0;
     inline virtual std::vector<cv::Point2f> getObservations() const = 0;
     inline virtual int getNumObservations() const = 0;
+    inline virtual Eigen::Vector3d getPointColor(int index) const = 0;
     inline virtual int getNumFrames() const = 0;
     inline virtual bool isColorAvailable() const = 0;
     inline virtual bool isDepthAvailable() const = 0;
