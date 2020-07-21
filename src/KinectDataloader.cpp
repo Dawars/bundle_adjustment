@@ -29,17 +29,22 @@ void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
     cv::waitKey(0);
 }
 
-void visualizeMatch(cv::Mat img1, cv::Mat img2, OnlinePointMatcher *matcher) {
+void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) const {
     std::vector<cv::DMatch> matches;
-    auto kpts = matcher->getKeyPoints();
+
+    cv::Mat img1 = this->colorImages[frame_one];
+    cv::Mat img2 = this->colorImages[frame_two];
+    auto matcher = this->correspondenceFinder->matcher;
+
+    auto kpts = this->correspondenceFinder->getKeyPoints();
     std::vector<cv::Point2f> pt1;
     std::vector<cv::Point2f> pt2;
     std::vector<int> idx1, idx2;
     for (int i = 0; i < kpts[0].size(); ++i) {
-        if (matcher->getObsPoint(i) != -1) {
+        if (this->correspondenceFinder->getObsPoint(i) != -1) {
             int offset = kpts[0].size();
             for (int j = 0; j < kpts[1].size(); ++j) {
-                if (matcher->getObsPoint(i) == matcher->getObsPoint(offset + j)) {
+                if (this->correspondenceFinder->getObsPoint(i) == this->correspondenceFinder->getObsPoint(offset + j)) {
                     pt1.push_back(kpts[0][i].pt);
                     pt2.push_back(kpts[1][j].pt);
                     idx1.push_back(i);
@@ -279,9 +284,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 }
             }
             std::cout << frameId << ":  " << matching_target_points.size() << " points" << std::endl;
-
-            
-            Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_source_points, matching_target_points);
+            Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
             estimatedPoses[frameId] = estimatedPose;
         }
     }

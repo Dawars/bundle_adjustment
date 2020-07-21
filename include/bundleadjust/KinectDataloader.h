@@ -36,6 +36,8 @@ public:
     inline cv::Mat getDepth(int frameId) const override;
 
     void initialize(double* R, double* T, double* intrinsics, double* X) override;
+    
+    void visualizeMatch(const int frame_one, const int frame_two) const;
 
 private:
 //    std::vector<Camera> cameras;

@@ -1,6 +1,6 @@
 
 
-#include "../include/bundleadjust/ProcrustesAligner.h"
+#include "bundleadjust/ProcrustesAligner.h"
 #include <Eigen/Dense>
 #include <vector>
 #include <iostream>
@@ -44,9 +44,6 @@ int main() {
     Eigen::Matrix3f rotation_matrix;
     rotation_matrix << estimated_pose.block(0, 0, 3, 3);
     Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
-
-    std::cout << r.axis() << "\n\n";
-
 
     return -1;
 }
