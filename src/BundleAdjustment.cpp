@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <ceres/rotation.h>
 #include <opencv2/opencv.hpp>
+#include <fmt/os.h>
 
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BAConstraint.h"
@@ -117,18 +118,19 @@ double *BundleAdjustment::getPoint(size_t pointIndex) {
     return &X[pointIndex * 3];
 }
 
-void BundleAdjustment::WriteToPLYFile(std::string& filename) {
-    std::ofstream of(filename.c_str());
-    of << "ply"
-    << '\n' << "format ascii 1.0"
-    << '\n' << "element vertex " << this->dataset->getNumPoints()
-    << '\n' << "property float x"
-    << '\n' << "property float y"
-    << '\n' << "property float z"
-    << '\n' << "property uchar red"
-    << '\n' << "property uchar green"
-    << '\n' << "property uchar blue"
-    << '\n' << "end_header" << std::endl;
+void BundleAdjustment::WriteToPLYFile(std::string filename) {
+    auto of = fmt::output_file(filename);
+
+    of.print("ply"
+    "\nformat ascii 1.0"
+    "\nelement vertex {}"
+    "\nproperty float x"
+    "\nproperty float y"
+    "\nproperty float z"
+    "\nproperty uchar red"
+    "\nproperty uchar green"
+    "\nproperty uchar blue"
+    "\nend_header\n", this->dataset->getNumPoints() + this->dataset->getNumFrames());
 
     for (int i = 0; i < this->dataset->getNumFrames(); ++i)  {
         double Tx = this->T[i*3];
