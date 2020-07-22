@@ -204,3 +204,11 @@ int OnlinePointMatcher::getNumPoints() const {
 std::vector<std::vector<cv::KeyPoint>> OnlinePointMatcher::getKeyPoints() const {
     return this->keypoints;
 }
+
+std::set<int> OnlinePointMatcher::getCamObs(int index) {
+    return cam_obs[index];
+}
+
+std::set<int> OnlinePointMatcher::getPointObs(int index) {
+    return point_obs[index];
+}

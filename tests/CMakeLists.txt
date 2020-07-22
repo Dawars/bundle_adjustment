@@ -1,3 +1,4 @@
 add_subdirectory(procrustes)
 add_subdirectory(get_color)
 add_subdirectory(visualize_match)
+add_subdirectory(num_matches)

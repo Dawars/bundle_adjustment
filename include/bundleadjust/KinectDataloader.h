@@ -39,10 +39,10 @@ public:
     
     void visualizeMatch(const int frame_one, const int frame_two) const;
 
+    OnlinePointMatcher* correspondenceFinder;
 private:
 //    std::vector<Camera> cameras;
     void setupPointDepth();
-    OnlinePointMatcher* correspondenceFinder;
     Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
     std::vector<double> x, y, z; // observations in camera space, depth from depth map
 
