@@ -182,7 +182,7 @@ void KinectDataloader::setupPointDepth() {
             assert(x_obs <= frame_width);
             assert(y_obs <= frame_height);
 
-            double depth = depthImages[i].at<double>(y_obs, x_obs);
+            float depth = depthImages[i].at<float>(y_obs, x_obs);
             Eigen::Vector3f cameraLine = instrinsicsInv * image_point;
             Eigen::Vector4f cameraPoint; // Andrew: don't think homogenous will be necessary
             cameraPoint << depth * cameraLine, 1;
