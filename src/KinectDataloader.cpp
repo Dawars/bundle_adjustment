@@ -8,6 +8,7 @@
 #include "opencv2/xfeatures2d.hpp"
 #include <ceres/rotation.h>
 #include <fmt/core.h>
+#include <bundleadjust/MeshWriter.h>
 
 #include "VirtualSensor.h"
 #include "bundleadjust/PointMatching.h"
@@ -165,6 +166,9 @@ void KinectDataloader::setupPointDepth() {
     Eigen::Matrix3f instrinsicsInv = this->intrinsics.inverse();
 
     for (int i = 0; i < getNumFrames(); ++i) {
+        std::vector<Eigen::Vector3f> pointsToPrint;
+        std::vector<Eigen::Vector3i> colorsToPrint;
+
         auto &kps = this->correspondenceFinder->keypoints[i];
         auto num_current_points = kps.size();
 
@@ -193,7 +197,22 @@ void KinectDataloader::setupPointDepth() {
             x.push_back(cameraPoint(0));
             y.push_back(cameraPoint(1));
             z.push_back(cameraPoint(2));
+
+            if (!std::isinf(depth)) {
+                Eigen::Vector3f point_vector;
+                point_vector << cameraPoint(0), cameraPoint(1), cameraPoint(2);
+                pointsToPrint.push_back(point_vector);
+
+                Eigen::Vector3i rgb_vector;
+                cv::Vec3b color = colorImages[i].at<cv::Vec3b>(y_obs, x_obs);
+                rgb_vector << color[2], color[1], color[0];
+                colorsToPrint.push_back(rgb_vector);
+            }
         }
+
+        // saving mesh
+        MeshWriter::WriteToPLYFile(fmt::format("frame{}.ply", i), pointsToPrint, colorsToPrint);
+
     }
 }
 
