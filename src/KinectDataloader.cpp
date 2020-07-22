@@ -112,12 +112,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
 
     correspondenceFinder->matchKeypoints();
-//    visualizeMatch(color1, color2, correspondenceFinder);
 
     setupPointDepth();
-    // TODO: depth test
-
-    // TODO: visualize matches
 
 }
 
@@ -186,7 +182,7 @@ void KinectDataloader::setupPointDepth() {
             assert(x_obs <= frame_width);
             assert(y_obs <= frame_height);
 
-            double depth = depthImages[i].at<double>(y_obs, x_obs);
+            float depth = depthImages[i].at<float>(y_obs, x_obs);
             Eigen::Vector3f cameraLine = instrinsicsInv * image_point;
             Eigen::Vector4f cameraPoint; // Andrew: don't think homogenous will be necessary
             cameraPoint << depth * cameraLine, 1;
@@ -366,7 +362,7 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
         uint b = color[0];
         uint g = color[1];
         uint r = color[2];
-        rgb_vector << b, g, r;
+        rgb_vector << r, g, b;
         return rgb_vector;
     }
 

@@ -62,13 +62,7 @@ void BundleAdjustment::createProblem() {
         problem.SetParameterBlockConstant(getIntrinsics(camIndex));
 
         // todo group params http://ceres-solver.org/nnls_solving.html#parameterblockordering
-        if(dataset->isColorAvailable()){
-            // todo add photometric loss
-        }
 
-        if(dataset->isDepthAvailable()){
-            // todo add depth loss
-        }
     }
     std::cout << "Invalid observations: " << invalidObs << " out of " << dataset->getNumObservations() << std::endl;
     std::cout << "Creating problem end" << std::endl;
