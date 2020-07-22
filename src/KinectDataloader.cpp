@@ -169,7 +169,7 @@ std::vector<cv::Point2f> KinectDataloader::getObservations() const {
 }
 
 int KinectDataloader::getNumObservations() const {
-    return this->correspondenceFinder->getNumPoints();
+    return this->correspondenceFinder->getNumObservations();
 }
 
 int KinectDataloader::getNumFrames() const {
