@@ -286,20 +286,20 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         rotation_matrix << pose.block(0, 0, 3, 3);
         Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-        // todo multiply with prev camera pose
-        if(frameId == origin_frame) {
-            R[3 * frameId + 0] = 0;
-            R[3 * frameId + 1] = 0;
-            R[3 * frameId + 2] = 0;
-        } else {
-            R[3 * frameId + 0] = r.axis()(0);
-            R[3 * frameId + 1] = r.axis()(1);
-            R[3 * frameId + 2] = r.axis()(2);
+            // todo multiply with prev camera pose
+            if (frameId == origin_frame) {
+                R[3 * frameId + 0] = 0;
+                R[3 * frameId + 1] = 0;
+                R[3 * frameId + 2] = 0;
+            } else {
+                R[3 * frameId + 0] = r.axis()(0) * r.angle();
+                R[3 * frameId + 1] = r.axis()(1) * r.angle();
+                R[3 * frameId + 2] = r.axis()(2) * r.angle();
+            }
+            T[3 * frameId + 0] = pose(0, 3);
+            T[3 * frameId + 1] = pose(1, 3);
+            T[3 * frameId + 2] = pose(2, 3);
         }
-        T[3 * frameId + 0] = pose(0, 3);
-        T[3 * frameId + 1] = pose(1, 3);
-        T[3 * frameId + 2] = pose(2, 3);
-    }
 
     for (int i = 0; i < this->getNumPoints(); ++i) {
         auto observationsIds = correspondenceFinder->getPointObs(i);
