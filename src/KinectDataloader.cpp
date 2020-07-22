@@ -112,12 +112,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
 
     correspondenceFinder->matchKeypoints();
-//    visualizeMatch(color1, color2, correspondenceFinder);
 
     setupPointDepth();
-    // TODO: depth test
-
-    // TODO: visualize matches
 
 }
 
