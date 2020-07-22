@@ -1,8 +1,12 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/xfeatures2d.hpp>
+#include <tuple>
 
 #include "bundleadjust/PointMatching.h"
+#include "bundleadjust/ProcrustesAligner.h"
+
+#include "bundleadjust/util.h"
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -36,13 +40,20 @@ void OnlinePointMatcher::matchKeypoints() {
     const float eps = params["ransacEps"];
 
     int num_frames = this->keypoints.size();
-    int totalPointsUntilFrame[num_frames];
     int num_observations = 0;
+
+    cam_obs.resize(num_frames, std::set<int>());
+
     for (size_t i = 0; i < num_frames; ++i) {
-        totalPointsUntilFrame[i] = num_observations; // excluding current frame
+        totalPointsUntilFrame.push_back(num_observations); // excluding current frame
 
         auto &kps = this->keypoints[i];
         auto num_current_points = kps.size();
+
+        for (int j = 0; j < keypoints[i].size(); ++j) {
+            cam_obs[i].insert(totalPointsUntilFrame[i] + j);
+        }
+
         num_observations += num_current_points;
     }
 
@@ -78,6 +89,7 @@ void OnlinePointMatcher::matchKeypoints() {
 
             for (int i = 0; i < knn_matches.size(); ++i) {
                 std::vector<DMatch> &match = knn_matches[i];
+
                 // ratio test
                 if (match[0].distance < ratio_thresh * match[1].distance) {
                     auto &obs = match[0];
@@ -110,21 +122,28 @@ void OnlinePointMatcher::matchKeypoints() {
                         filtered++;
                         auto &obs = matches[i];
                         // keep track of 3D points (1 3D point corresponding to all 2D matches)
-                        int *other3D = &obs_point[totalPointsUntilFrame[otherFrameId] + obs.queryIdx];
-                        int *current3D = &obs_point[totalPointsUntilFrame[frameId] + obs.trainIdx];
+                        int otherObsIndex = totalPointsUntilFrame[otherFrameId] + obs.queryIdx;
+                        int currentObsIndex = totalPointsUntilFrame[frameId] + obs.trainIdx;
+                        int *other3D = &obs_point[otherObsIndex];
+                        int *current3D = &obs_point[currentObsIndex];
                         if (*other3D == -1) { // 2d observation doesn't correspond to 3D point yet
                             int newPoint = this->numPoints3d++;
                             *other3D = newPoint;
                             *current3D = newPoint;
+                            point_obs.push_back(std::set<int>());
                         } else { // 2D point has already been matched to 3D point, assign new 2D point to it as well
                             *current3D = *other3D;
                         }
+                        point_obs[*other3D].insert(otherObsIndex);
+                        point_obs[*other3D].insert(currentObsIndex);
                     }
                 }
 //                std::cout << all << " " << filtered << std::endl;
             }
         }
     }
+
+    std::cout << numPoints3d << std::endl;
 }
 
 std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
@@ -138,6 +157,26 @@ std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
 
     return points;
 }
+cv::Point2f OnlinePointMatcher::getObservation(int index) const {
+    for (int frameId = 0; frameId < getNumFrames(); ++frameId) {
+        if(index - totalPointsUntilFrame[frameId] <= 0){
+            return keypoints[frameId-1][index - totalPointsUntilFrame[frameId-1]].pt;
+        }
+    }
+    throw std::invalid_argument("Invalid observation index");
+}
+
+// std::vector<std::tuple<cv::Point2f, cv::Point2f>> OnlinePointMatcher::get_matching_observations_between_frames(const int base_frame, const int other_frame) const {
+//     std::vector<std::tuple<cv::Point2f, cv::Point2f>> points;
+
+//     for (auto &frame : this->keypoints) {
+//         for (auto &keypoint : frame) {
+//             points.push_back(keypoint.pt);
+//         }
+//     }
+
+//     return points;
+// }
 
 int OnlinePointMatcher::getObsCam(int index) const {
     return this->obs_cam[index];
@@ -145,6 +184,9 @@ int OnlinePointMatcher::getObsCam(int index) const {
 
 int OnlinePointMatcher::getObsPoint(int index) const {
     return this->obs_point[index];
+}
+int OnlinePointMatcher::getObsIndex(int frameId, int obsId){
+    return totalPointsUntilFrame[frameId] + obsId;
 }
 
 int OnlinePointMatcher::getNumObservations() const {
@@ -163,10 +205,10 @@ std::vector<std::vector<cv::KeyPoint>> OnlinePointMatcher::getKeyPoints() const 
     return this->keypoints;
 }
 
-std::vector<int> OnlinePointMatcher::getObsCam() const {
-    return this->obs_cam;
+std::set<int> OnlinePointMatcher::getCamObs(int index) {
+    return cam_obs[index];
 }
 
-std::vector<int> OnlinePointMatcher::getObsPoint() const {
-    return this->obs_point;
+std::set<int> OnlinePointMatcher::getPointObs(int index) {
+    return point_obs[index];
 }

@@ -15,7 +15,7 @@ std::vector<cv::KeyPoint> SiftDetector::getFeatures(cv::Mat &color, cv::Mat &dep
 
 //    https://github.com/opencv/opencv/tree/master/samples/cpp/tutorial_code/features2D
 
-    cv::Ptr<cv::Feature2D> f2d = cv::xfeatures2d::SIFT::create();
+    cv::Ptr<cv::Feature2D> f2d = cv::SIFT::create();
     //cv::Ptr<Feature2D> f2d = cv2::xfeatures2d::SURF::create();
     //cv::Ptr<Feature2D> f2d = cv2::ORB::create();
 

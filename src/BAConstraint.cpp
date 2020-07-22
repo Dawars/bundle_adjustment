@@ -33,7 +33,7 @@ bool BAConstraint::operator()(const T *const point, const T *const rot, const T 
     Eigen::Vector3<T> Pcam = Prot + t;
 
     // todo unify camera model, signed
-    Eigen::Vector3<T> Pimg = -Pcam / Pcam(2); // z division, minus because of camera model in BAL
+    Eigen::Vector3<T> Pimg = Pcam / Pcam(2); // z division, minus because of camera model in BAL
     T r2 = Pimg.topRows(2).squaredNorm();
     T d = T(1) + r2 * (k1 + r2 * k2);
 

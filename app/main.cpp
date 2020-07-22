@@ -9,10 +9,10 @@
 
 
 int main(){
-//    KinectDataloader* data = new KinectDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
+    
+    
+    KinectDataloader* data = new KinectDataloader("/home/andrew/repos/tum/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
 
-
-    BalDataloader* data = new BalDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/data/bal/venice/problem-52-64053-pre.txt");
 
 
     auto solvers = {ceres::SPARSE_NORMAL_CHOLESKY, ceres::DENSE_SCHUR, ceres::SPARSE_SCHUR, ceres::ITERATIVE_SCHUR, ceres::CGNR};

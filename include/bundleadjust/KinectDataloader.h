@@ -19,12 +19,15 @@ public:
     std::vector<cv::Mat> colorImages;
     std::vector<cv::Mat> depthImages;
 
+    Eigen::Vector3i getPointColor(int point_index) const override;
+
     inline int getObsCam(int index) const override;
     inline int getObsPoint(int index) const override;
     inline int getNumPoints() const override;
     inline std::vector<cv::Point2f> getObservations() const override;
     inline int getNumObservations() const override;
     inline int getNumFrames() const override;
+    
 
     inline bool isColorAvailable() const override;
     inline bool isDepthAvailable() const override;
@@ -33,10 +36,16 @@ public:
     inline cv::Mat getDepth(int frameId) const override;
 
     void initialize(double* R, double* T, double* intrinsics, double* X) override;
+    
+    void visualizeMatch(const int frame_one, const int frame_two) const;
 
+    OnlinePointMatcher* correspondenceFinder;
 private:
 //    std::vector<Camera> cameras;
-    OnlinePointMatcher* correspondenceFinder;
-    double intrinsics[6]; // fx, fy, ox, oy, k1, k2
+    void setupPointDepth();
+    Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
+    std::vector<double> x, y, z; // observations in camera space, depth from depth map
+
+    std::vector<Eigen::Matrix4f> estimatedPoses;
 };
 
