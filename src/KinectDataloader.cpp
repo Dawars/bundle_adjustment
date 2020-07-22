@@ -366,7 +366,7 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
         uint b = color[0];
         uint g = color[1];
         uint r = color[2];
-        rgb_vector << b, g, r;
+        rgb_vector << r, g, b;
         return rgb_vector;
     }
 
