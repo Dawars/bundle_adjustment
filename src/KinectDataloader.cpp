@@ -7,6 +7,7 @@
 #include "opencv2/features2d.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include <ceres/rotation.h>
+#include <fmt/core.h>
 
 #include "VirtualSensor.h"
 #include "bundleadjust/PointMatching.h"
@@ -34,36 +35,32 @@ void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) 
     cv::Mat img1 = this->colorImages[frame_one];
     cv::Mat img2 = this->colorImages[frame_two];
 
-    std::vector<cv::KeyPoint> pt1;
-    std::vector<cv::KeyPoint> pt2;
-    std::vector<int> idx1, idx2;
+    auto matcher = this->correspondenceFinder->matcher;
 
-    for(int i=0; i<getNumObservations(); i++) {
-        cv::KeyPoint p = cv::KeyPoint(x[i]/z[i], y[i]/z[i], 1);
-        if(getObsCam(i) == frame_one) {
-            //std::cout << "obs 1--  " << getObsPoint(i) << "\n";
-            pt1.push_back(p);
-            idx1.push_back(getObsPoint(i));
-        } else if (getObsCam(i) == frame_two) {
-            std::cout << "frame 2--\n\n";
-            pt2.push_back(p);
-            idx2.push_back(getObsPoint(i));
-        }
-    }
+    auto kpts = this->correspondenceFinder->getKeyPoints();
 
-    for(int i=0; i<idx1.size(); i++) {
-        for(int j=0; j<idx2.size(); j++) {
-            if(idx1[i] == idx2[j]) {
-                matches.push_back(cv::DMatch(idx1[i], idx2[j], 1.));
+    auto kpts1 = kpts[frame_one];
+    auto kpts2 = kpts[frame_two];
+
+    for (int i = 0; i < kpts1.size(); ++i) {
+        int obsIndex1 = correspondenceFinder->getObsIndex(frame_one, i);
+
+        if (this->correspondenceFinder->getObsPoint(obsIndex1) != -1) {
+            for (int j = 0; j < kpts2.size(); ++j) {
+                int obsIndex2 = correspondenceFinder->getObsIndex(frame_two, j);
+
+                if (this->correspondenceFinder->getObsPoint(obsIndex1) ==
+                    this->correspondenceFinder->getObsPoint(obsIndex2)) {
+                    matches.push_back(cv::DMatch(i, j, 1.));
+                }
             }
         }
     }
-    
 
     cv::Mat out;
-    cv::drawMatches(img1, pt1, img2, pt2, matches, out);
+    cv::drawMatches(img1, kpts1, img2, kpts2, matches, out);
 
-    std::string name("name");
+    std::string name(fmt::format("Matches between frames {} & {}", frame_one, frame_two));
     cv::namedWindow(name);
     cv::imshow(name, out);
     cv::waitKey(0);
@@ -222,8 +219,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
     // Get all the key points from the origin frame coords (x,y,z) and point index
 
-    for(int obsIndex : correspondenceFinder->cam_obs[origin_frame]) {
-        int pointIndex = correspondenceFinder->obs_point[obsIndex];
+    for (int obsIndex : correspondenceFinder->getCamObs(origin_frame)) {
+        int pointIndex = correspondenceFinder->getObsPoint(obsIndex);
 
         if(pointIndex == -1) { continue; }
 
@@ -245,8 +242,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             // todo compare to prev frame
 
             // get all the key points from the target frame
-            for (int obsIndex : correspondenceFinder->cam_obs[frameId]) {
-                int pointIndex = correspondenceFinder->obs_point[obsIndex];
+            for (int obsIndex : correspondenceFinder->getCamObs(frameId)) {
+                int pointIndex = correspondenceFinder->getObsPoint(obsIndex);
 
                 if(pointIndex == -1) { continue; }
 
@@ -309,7 +306,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
     }
 
     for (int i = 0; i < this->getNumPoints(); ++i) {
-        auto observationsIds = correspondenceFinder->point_obs[i];
+        auto observationsIds = correspondenceFinder->getPointObs(i);
         Eigen::Matrix4f pose;
         Eigen::Vector4f point;
         bool foundValidObsDepth = false;
@@ -351,22 +348,21 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
     Eigen::Vector3i rgb_vector;
     rgb_vector << 0, 0, 0;
 
-    auto observationsIds = correspondenceFinder->point_obs[point_index];
+    auto observationsIds = correspondenceFinder->getPointObs(point_index);
 
-    for(int obs_idx : observationsIds) {
-        int cam_idx  = getObsCam(obs_idx);
-        Eigen::Matrix3f intrinsics;
-        Eigen::Vector3f obs;
-        obs << x[obs_idx], y[obs_idx], z[obs_idx];
+    for (int obs_idx : observationsIds) {
+        int cam_idx = getObsCam(obs_idx);
+        auto frame_width = getColor(cam_idx).size[1];
+        auto frame_height = getColor(cam_idx).size[0];
+        auto point = correspondenceFinder->getObservation(obs_idx);
 
-        auto imSpace = intrinsics * obs;
-        auto imPlane = imSpace/imSpace(2);
-        double x_pix = imPlane(0);
-        double y_pix = imPlane(1);
-        if(std::isnan(x_pix) || std::isnan(y_pix)) {
+        assert(point.x <= frame_width);
+        assert(point.y <= frame_height);
+
+        if (std::isnan(point.x) || std::isnan(point.y)) {
             continue;
         }
-        cv::Vec3b color = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix);
+        cv::Vec3b color = colorImages[cam_idx].at<cv::Vec3b>(point.y, point.x);
         uint b = color[0];
         uint g = color[1];
         uint r = color[2];
