@@ -350,27 +350,31 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 }
 
 
-Eigen::Vector3d KinectDataloader::getPointColor(int point_index) const {
-    Eigen::Vector3d rgb_vector;
+Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
+    Eigen::Vector3i rgb_vector;
     rgb_vector << 0, 0, 0;
 
-    for(int i=0; i<this->getNumObservations(); i++) {
-        int obs_point = getObsPoint(i);
-        
-        if(obs_point == point_index) {
-            int cam_idx  = getObsCam(i);            
-            double x_pix = x[i] / z[i];
-            double y_pix = y[i] / z[i];
+    auto observationsIds = correspondenceFinder->point_obs[point_index];
 
-            if(std::isnan(x_pix) || std::isnan(y_pix)) {
-                return rgb_vector;
-            }
-            double b = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[0];
-            double g = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[1];
-            double r = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix)[2];
-            rgb_vector << b, g, r;
-            return rgb_vector;
+    for(int obs_idx : observationsIds) {
+        int cam_idx  = getObsCam(obs_idx);
+        Eigen::Matrix3f intrinsics;
+        Eigen::Vector3f obs;
+        obs << x[obs_idx], y[obs_idx], z[obs_idx];
+
+        auto imSpace = intrinsics * obs;
+        auto imPlane = imSpace/imSpace(2);
+        double x_pix = imPlane(0);
+        double y_pix = imPlane(1);
+        if(std::isnan(x_pix) || std::isnan(y_pix)) {
+            continue;
         }
+        cv::Vec3b color = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix);
+        uint b = color[0];
+        uint g = color[1];
+        uint r = color[2];
+        rgb_vector << b, g, r;
+        return rgb_vector;
     }
 
     return rgb_vector;

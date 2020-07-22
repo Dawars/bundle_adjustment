@@ -133,19 +133,14 @@ void BundleAdjustment::WriteToPLYFile(std::string filename) {
     "\nend_header\n", this->dataset->getNumPoints() + this->dataset->getNumFrames());
 
     for (int i = 0; i < this->dataset->getNumFrames(); ++i)  {
-        double Tx = this->T[i*3];
-        double Ty = this->T[i*3+1];
-        double Tz = this->T[i*3+2];
-        of << Tx << ' ' << Ty << ' ' << Tz
-        << " 0 255 0" << '\n';
+        auto cam = getTranslation(i);
+        of.print("{0:.4f} {1:.4f} {2:.4f} 0 255 0\n", cam[0], cam[1], cam[2]);
     }
 
     for (int i = 0; i < this->dataset->getNumPoints(); ++i) {
-        for (int j = 0; j < 3; ++j) {
-            of << X[i*3+j] << ' ';
-        }
-        Eigen::Vector3d bgr = this->dataset->getPointColor(i);
-        of << ' ' << bgr(2) << ' ' << bgr(1) << ' ' << bgr(0) << "\n";
+        auto point = getPoint(i);
+        Eigen::Vector3i bgr = this->dataset->getPointColor(i);
+        of.print("{0:.4f} {1:.4f} {2:.4f} {3} {4} {5}\n", point[0], point[1], point[2], bgr(0), bgr(1), bgr(2));
     }
     of.close();
 }
