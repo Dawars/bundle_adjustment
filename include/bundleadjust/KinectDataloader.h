@@ -44,7 +44,7 @@ private:
     void setupPointDepth();
     OnlinePointMatcher* correspondenceFinder;
     Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
-    std::vector<double> x, y, z;
+    std::vector<double> x, y, z; // observations in camera space, depth from depth map
 
     std::vector<Eigen::Matrix4f> estimatedPoses;
 };

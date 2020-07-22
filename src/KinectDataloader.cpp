@@ -7,6 +7,7 @@
 #include "opencv2/features2d.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include <ceres/rotation.h>
+#include <fmt/core.h>
 
 #include "VirtualSensor.h"
 #include "bundleadjust/PointMatching.h"
@@ -37,44 +38,57 @@ void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) 
     auto matcher = this->correspondenceFinder->matcher;
 
     auto kpts = this->correspondenceFinder->getKeyPoints();
+
+    auto kpts1 = kpts[frame_one];
+    auto kpts2 = kpts[frame_two];
+
     std::vector<cv::Point2f> pt1;
     std::vector<cv::Point2f> pt2;
     std::vector<int> idx1, idx2;
-    for (int i = 0; i < kpts[0].size(); ++i) {
-        if (this->correspondenceFinder->getObsPoint(i) != -1) {
-            int offset = kpts[0].size();
-            for (int j = 0; j < kpts[1].size(); ++j) {
-                if (this->correspondenceFinder->getObsPoint(i) == this->correspondenceFinder->getObsPoint(offset + j)) {
-                    pt1.push_back(kpts[0][i].pt);
-                    pt2.push_back(kpts[1][j].pt);
+
+    for (int i = 0; i < kpts1.size(); ++i) {
+        int obsIndex1 = correspondenceFinder->getObsIndex(frame_one, i);
+
+        if (this->correspondenceFinder->getObsPoint(obsIndex1) != -1) {
+            for (int j = 0; j < kpts2.size(); ++j) {
+                int obsIndex2 = correspondenceFinder->getObsIndex(frame_two, j);
+
+                if (this->correspondenceFinder->getObsPoint(obsIndex1) ==
+                    this->correspondenceFinder->getObsPoint(obsIndex2)) {
+                    pt1.push_back(kpts[frame_one][i].pt);
+                    pt2.push_back(kpts[frame_two][j].pt);
                     idx1.push_back(i);
                     idx2.push_back(j);
                 }
             }
         }
     }
-    cv::Mat fundamental_matrix =
-            findHomography(pt1, pt2, cv::FM_RANSAC);
 
-    double eps = 1e1;
-    for (int i = 0; i < pt1.size(); ++i) {
-        cv::Point3d p1 = {pt1[i].x, pt1[i].y, 1};
-        cv::Point3d p2 = {pt2[i].x, pt2[i].y, 1};
-        cv::Mat mp1(p1);
-        cv::Mat mp2(p2);
-        cv::Mat mp3 = fundamental_matrix * mp1;
-        cv::Point3d p3(mp3);
-        p3.x /= p3.z;
-        p3.y /= p3.z;
-        if (cv::norm(p2-p3) < eps) {
-            matches.push_back(cv::DMatch(idx1[i], idx2[i], 1.));
+    if (idx1.size() >= 8) {
+
+        cv::Mat fundamental_matrix =
+                findHomography(pt1, pt2, cv::FM_RANSAC);
+
+        double eps = 1e1;
+        for (int i = 0; i < pt1.size(); ++i) {
+            cv::Point3d p1 = {kpts1[i].pt.x, kpts1[i].pt.y, 1};
+            cv::Point3d p2 = {kpts2[i].pt.x, kpts2[i].pt.y, 1};
+            cv::Mat mp1(p1);
+            cv::Mat mp2(p2);
+            cv::Mat mp3 = fundamental_matrix * mp1;
+            cv::Point3d p3(mp3);
+            p3.x /= p3.z;
+            p3.y /= p3.z;
+            if (cv::norm(p2 - p3) < eps) {
+                matches.push_back(cv::DMatch(idx1[i], idx2[i], 1.));
+            }
         }
     }
 
     cv::Mat out;
-    cv::drawMatches(img1, kpts[0], img2, kpts[1], matches, out);
+    cv::drawMatches(img1, kpts1, img2, kpts2, matches, out);
 
-    std::string name("name");
+    std::string name(fmt::format("Matches between frames {} & {}", frame_one, frame_two));
     cv::namedWindow(name);
     cv::imshow(name, out);
     cv::waitKey(0);
