@@ -18,7 +18,7 @@ class OnlinePointMatcher {
     std::vector<cv::Mat> descriptors;
 
     int numPoints3d = 0; // 3d points
-
+    std::vector<int> totalPointsUntilFrame;
 public:
     cv::Ptr<cv::DescriptorMatcher> matcher;
     std::vector<std::vector<cv::KeyPoint>> keypoints;
@@ -38,13 +38,16 @@ public:
     void matchKeypoints();
 
     std::vector<cv::Point2f> getObservations() const;
+    cv::Point2f getObservation(int index) const;
 
     int getObsCam(int index) const;
     int getObsPoint(int index) const;
+    int getObsIndex(int frameId, int obsId);
+    std::set<int> getPointObs(int index);
+    std::set<int> getCamObs(int index);
+
     int getNumPoints() const;
     int getNumObservations() const;
     int getNumFrames() const;
     std::vector<std::vector<cv::KeyPoint>> getKeyPoints() const;
-    std::vector<int> getObsCam() const;
-    std::vector<int> getObsPoint() const;
 };

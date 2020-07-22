@@ -40,13 +40,12 @@ void OnlinePointMatcher::matchKeypoints() {
     const float eps = params["ransacEps"];
 
     int num_frames = this->keypoints.size();
-    int totalPointsUntilFrame[num_frames];
     int num_observations = 0;
 
     cam_obs.resize(num_frames, std::set<int>());
 
     for (size_t i = 0; i < num_frames; ++i) {
-        totalPointsUntilFrame[i] = num_observations; // excluding current frame
+        totalPointsUntilFrame.push_back(num_observations); // excluding current frame
 
         auto &kps = this->keypoints[i];
         auto num_current_points = kps.size();
@@ -158,6 +157,14 @@ std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
 
     return points;
 }
+cv::Point2f OnlinePointMatcher::getObservation(int index) const {
+    for (int frameId = 0; frameId < getNumFrames(); ++frameId) {
+        if(index - totalPointsUntilFrame[frameId] <= 0){
+            return keypoints[frameId-1][index - totalPointsUntilFrame[frameId-1]].pt;
+        }
+    }
+    throw std::invalid_argument("Invalid observation index");
+}
 
 // std::vector<std::tuple<cv::Point2f, cv::Point2f>> OnlinePointMatcher::get_matching_observations_between_frames(const int base_frame, const int other_frame) const {
 //     std::vector<std::tuple<cv::Point2f, cv::Point2f>> points;
@@ -178,6 +185,9 @@ int OnlinePointMatcher::getObsCam(int index) const {
 int OnlinePointMatcher::getObsPoint(int index) const {
     return this->obs_point[index];
 }
+int OnlinePointMatcher::getObsIndex(int frameId, int obsId){
+    return totalPointsUntilFrame[frameId] + obsId;
+}
 
 int OnlinePointMatcher::getNumObservations() const {
     return this->obs_point.size();
@@ -193,12 +203,4 @@ int OnlinePointMatcher::getNumPoints() const {
 
 std::vector<std::vector<cv::KeyPoint>> OnlinePointMatcher::getKeyPoints() const {
     return this->keypoints;
-}
-
-std::vector<int> OnlinePointMatcher::getObsCam() const {
-    return this->obs_cam;
-}
-
-std::vector<int> OnlinePointMatcher::getObsPoint() const {
-    return this->obs_point;
 }

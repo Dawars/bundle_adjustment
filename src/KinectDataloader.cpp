@@ -356,20 +356,20 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
 
     auto observationsIds = correspondenceFinder->point_obs[point_index];
 
-    for(int obs_idx : observationsIds) {
-        int cam_idx  = getObsCam(obs_idx);
-        Eigen::Matrix3f intrinsics;
-        Eigen::Vector3f obs;
-        obs << x[obs_idx], y[obs_idx], z[obs_idx];
+    for (int obs_idx : observationsIds) {
+        int cam_idx = getObsCam(obs_idx);
+        auto frame_width = getColor(cam_idx).size[1];
+        auto frame_height = getColor(cam_idx).size[0];
+        auto point = correspondenceFinder->getObservation(obs_idx);
 
-        auto imSpace = intrinsics * obs;
-        auto imPlane = imSpace/imSpace(2);
-        double x_pix = imPlane(0);
-        double y_pix = imPlane(1);
-        if(std::isnan(x_pix) || std::isnan(y_pix)) {
+        assert(point.x <= frame_width);
+        assert(point.y <= frame_height);
+
+        if (std::isnan(point.x) || std::isnan(point.y)) {
             continue;
         }
-        cv::Vec3b color = colorImages[cam_idx].at<cv::Vec3b>(x_pix, y_pix);
+
+        cv::Vec3b color = colorImages[cam_idx].at<cv::Vec3b>(point.y, point.x);
         uint b = color[0];
         uint g = color[1];
         uint r = color[2];
