@@ -141,6 +141,10 @@ Eigen::Matrix4f VirtualSensor::GetTrajectory() {
     return m_currentTrajectory;
 }
 
+Eigen::Matrix4f VirtualSensor::GetTrajectory(int i) {
+    return m_trajectory[i];
+}
+
 bool VirtualSensor::ReadFileList(const std::string &filename, std::vector<std::string> &result,
                                  std::vector<double> &timestamps) {
     std::ifstream fileDepthList(filename, std::ios::in);
