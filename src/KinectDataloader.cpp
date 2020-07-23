@@ -67,7 +67,8 @@ void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) 
 }
 
 
-KinectDataloader::KinectDataloader(const std::string &datasetDir) {
+KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroundTruth)
+        : initGroundTruth(initGroundTruth) {
 //    std::unordered_map<std::string, float> params = {
 //            {"blockSize",    2.0},
 //            {"apertureSize", 3.0},
@@ -85,16 +86,15 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
     correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.25},
                                                                                  {"ransacEps", 1e1}}};
+    this->sensor = new VirtualSensor{};
+    if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
 
-    VirtualSensor sensor{};
-    if(!sensor.Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
+    this->intrinsics = sensor->GetColorIntrinsics();
 
-    this->intrinsics = sensor.GetColorIntrinsics();
-
-//    for (int i = 0; i < 3 && sensor.ProcessNextFrame(); ++i) {
-    while (sensor.ProcessNextFrame()) {
-        auto color = sensor.GetColor();
-        auto depth = sensor.GetDepth();
+//    for (int i = 0; i < 3 && sensor->ProcessNextFrame(); ++i) {
+    while (sensor->ProcessNextFrame()) {
+        auto color = sensor->GetColor();
+        auto depth = sensor->GetDepth();
 
         // Future improvement https://vision.unipv.it/corsi/computervision/secondchoice/0279%20Depth%20Image%20Enhancement%20for%20Kinect%20Using%20Region%20Growing%20and%20Bilateral%20-%20Copia.pdf
         cv::Mat depthFiltered;
@@ -115,10 +115,13 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir) {
 
     setupPointDepth();
 
+    this->estimatedPoses = new float[getNumFrames()*16];
 }
 
 KinectDataloader::~KinectDataloader() {
     delete this->correspondenceFinder;
+    delete this->sensor;
+    delete this->estimatedPoses;
 }
 
 int KinectDataloader::getObsCam(int index) const {
@@ -198,8 +201,6 @@ void KinectDataloader::setupPointDepth() {
 }
 
 void KinectDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
-    estimatedPoses.resize(this->getNumFrames());
-
     for (int i = 0; i < this->getNumFrames(); ++i) {
         intrinsics[6 * i + 0] = this->intrinsics(0, 0);
         intrinsics[6 * i + 1] = this->intrinsics(1, 1);
@@ -210,8 +211,31 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
     }
 
     const int origin_frame = 0; // One should be able to choose if they know the optimal frame
-    std::vector<Eigen::Vector3f> source_points;
-    std::vector<int> source_points_indices;
+    if (this->initGroundTruth) {
+        for (int i = 0; i < this->getNumFrames(); ++i) {
+            auto traj = this->sensor->GetTrajectory(i);
+
+            Eigen::Matrix3f rot = traj.block(0, 0, 3, 3);
+            auto r = Eigen::AngleAxis<float>(rot);
+
+            R[3 * i + 0] = r.axis()(0) * r.angle();
+            R[3 * i + 1] = r.axis()(1) * r.angle();
+            R[3 * i + 2] = r.axis()(2) * r.angle();
+            T[3 * i + 0] = traj(0, 3);
+            T[3 * i + 1] = traj(1, 3);
+            T[3 * i + 2] = traj(2, 3);
+
+            fmt::print("\nTrajectory at frame: {}\n", i);
+            std::cout << traj << std::endl;
+            fmt::print("Axis: {} {} {}\n", r.axis()(0), r.axis()(1), r.axis()(2));
+            fmt::print("Angle: {}\n", r.angle());
+
+
+            Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(i)) = traj;
+        }
+    } else {
+        std::vector<Eigen::Vector3f> source_points;
+        std::vector<int> source_points_indices;
 
     // Get all the key points from the origin frame coords (x,y,z) and point index
 
@@ -226,14 +250,14 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         source_points_indices.push_back(pointIndex);
     }
 
-    ProcrustesAligner aligner;
-    for (int frameId=0; frameId < this->getNumFrames(); frameId++) {
-        if (frameId == origin_frame) {
-            std::cout << frameId << ":  " << " The origin frame" << std::endl;
-            estimatedPoses[frameId] = Eigen::Matrix4f::Identity();
-        } else {
-            std::vector<Eigen::Vector3f> target_points;
-            std::vector<int> target_points_indices;
+        ProcrustesAligner aligner;
+        for (int frameId = 0; frameId < this->getNumFrames(); frameId++) {
+            if (frameId == origin_frame) {
+                std::cout << frameId << ":  " << " The origin frame" << std::endl;
+                Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = Eigen::Matrix4f::Identity();
+            } else {
+                std::vector<Eigen::Vector3f> target_points;
+                std::vector<int> target_points_indices;
 
             // todo compare to prev frame
 
@@ -274,68 +298,82 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
             //std::cout << frameId << ":  " << matching_target_points.size() << " points" << std::endl;
 
-            Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
-            estimatedPoses[frameId] = estimatedPose;
+                Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
+                Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = estimatedPose;
+            }
         }
-    }
-    for (int frameId = 0; frameId < this->getNumFrames(); ++frameId) {
+        for (int frameId = 0; frameId < this->getNumFrames(); ++frameId) {
 
-        auto pose = estimatedPoses[frameId];
+            Eigen::Matrix4f pose = Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId));
 
         Eigen::Matrix3f rotation_matrix;
         rotation_matrix << pose.block(0, 0, 3, 3);
         Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
-        // todo multiply with prev camera pose
-        if(frameId == origin_frame) {
-            R[3 * frameId + 0] = 0;
-            R[3 * frameId + 1] = 0;
-            R[3 * frameId + 2] = 0;
-        } else {
-            R[3 * frameId + 0] = r.axis()(0);
-            R[3 * frameId + 1] = r.axis()(1);
-            R[3 * frameId + 2] = r.axis()(2);
+            // todo multiply with prev camera pose
+            if (frameId == origin_frame) {
+                R[3 * frameId + 0] = 0;
+                R[3 * frameId + 1] = 0;
+                R[3 * frameId + 2] = 0;
+            } else {
+                R[3 * frameId + 0] = r.axis()(0) * r.angle();
+                R[3 * frameId + 1] = r.axis()(1) * r.angle();
+                R[3 * frameId + 2] = r.axis()(2) * r.angle();
+            }
+            T[3 * frameId + 0] = pose(0, 3);
+            T[3 * frameId + 1] = pose(1, 3);
+            T[3 * frameId + 2] = pose(2, 3);
         }
-        T[3 * frameId + 0] = pose(0, 3);
-        T[3 * frameId + 1] = pose(1, 3);
-        T[3 * frameId + 2] = pose(2, 3);
+
     }
+    fmt::print("\n\nInitializing 3d points\n");
 
     for (int i = 0; i < this->getNumPoints(); ++i) {
         auto observationsIds = correspondenceFinder->getPointObs(i);
         Eigen::Matrix4f pose;
+        pose.setZero();
         Eigen::Vector4f point;
         bool foundValidObsDepth = false;
 
         for(int obsIndex : observationsIds) {
             int frameId = getObsCam(obsIndex);
-            pose = estimatedPoses[frameId];
+            pose = Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId));
             point << x[obsIndex], y[obsIndex], z[obsIndex], 1;
+
+            fmt::print("Point {0} with obs {1} in frame {2}: {3:.4f} {4:.4f} {5:.4f} {6:.4f}\n", i, obsIndex, frameId, point(0), point(1), point(2), point(3));
+            std::cout << pose << std::endl;
 
             // if value is inf or nan then invalidate obs_point
             if (!std::isinf(point(0)) && !std::isinf(point(1)) && !std::isinf(point(2)) &&
-                !std::isinf(point(0)) && !std::isinf(point(1)) && !std::isinf(point(2))) {
+                !std::isnan(point(0)) && !std::isnan(point(1)) && !std::isnan(point(2))) {
                 foundValidObsDepth = true;
                 break;
             } // we could leave the correspondences as long as we find its 3D position
+            else {
+                fmt::print("nan\n");
+            }
         }
 
         if(!foundValidObsDepth){
+            fmt::print("Invalidating 3d point {}\n", i);
+
             // invalidate obs_point for all observations, no 3D position known
             for(int obsIndex : observationsIds) {
                 correspondenceFinder->obs_point[obsIndex] = -1;
             }
-            continue;
+
+            X[3 * i + 0] = nan("");
+            X[3 * i + 1] = nan("");
+            X[3 * i + 2] = nan("");
+        } else {
+
+            auto point3D = pose * point;
+            fmt::print("3d Point: {0:.4f} {1:.4f} {2:.4f}\n\n", point3D(0), point3D(1), point3D(2));
+
+            X[3 * i + 0] = point3D(0);
+            X[3 * i + 1] = point3D(1);
+            X[3 * i + 2] = point3D(2);
         }
-
-        assert(!std::isinf(point(0)) && !std::isinf(point(1)) && !std::isinf(point(2)) &&
-            !std::isinf(point(0)) && !std::isinf(point(1)) && !std::isinf(point(2)));
-
-        auto point3D = pose * point;
-
-        X[3*i + 0] = point3D(0);
-        X[3*i + 1] = point3D(1);
-        X[3*i + 2] = point3D(2);
     }
 }
 
@@ -367,6 +405,10 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
     }
 
     return rgb_vector;
+}
+
+float* KinectDataloader::getEstimatedPose(int i) {
+    return &estimatedPoses[16*i];
 }
 
 

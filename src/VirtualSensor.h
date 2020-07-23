@@ -82,6 +82,7 @@ public:
 
     // get current trajectory transformation
     Eigen::Matrix4f GetTrajectory();
+    Eigen::Matrix4f GetTrajectory(int i);
 
 private:
 
