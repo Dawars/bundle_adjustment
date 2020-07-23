@@ -141,8 +141,19 @@ Eigen::Matrix4f VirtualSensor::GetTrajectory() {
     return m_currentTrajectory;
 }
 
-Eigen::Matrix4f VirtualSensor::GetTrajectory(int i) {
-    return m_trajectory[i];
+Eigen::Matrix4f VirtualSensor::GetTrajectory(int index) {
+    double timestamp = m_depthImagesTimeStamps[index];
+    double min = std::numeric_limits<double>::max();
+    int idx = 0;
+    for (unsigned int i = 0; i < m_trajectory.size(); ++i) {
+        double d = fabs(m_trajectoryTimeStamps[i] - timestamp);
+        if (min > d) {
+            min = d;
+            idx = i;
+        }
+    }
+
+    return m_trajectory[idx];
 }
 
 bool VirtualSensor::ReadFileList(const std::string &filename, std::vector<std::string> &result,
