@@ -1,0 +1,20 @@
+ply
+format ascii 1.0
+element vertex 8
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+0.0000 0.0000 0.0000 0 255 0
+0.0435 0.0435 0.0435 0 255 0
+-0.4681 0.3279 1.0388 153 143 141
+-0.4544 0.2236 1.2047 234 227 239
+-0.4381 0.2344 1.2013 232 227 227
+-0.1235 0.2566 1.0786 212 200 201
+-0.1136 0.2245 1.0736 45 38 50
+-0.1016 0.2637 1.0954 24 2 7
+-0.0895 0.2777 1.1158 229 221 225
+0.1279 0.3785 0.9672 194 186 190

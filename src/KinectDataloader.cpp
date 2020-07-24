@@ -31,6 +31,44 @@ void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
     cv::waitKey(0);
 }
 
+void KinectDataloader::visualizePointMatch(const int frame_one, const int frame_two, const int point_index, const int match_index) const {
+    std::vector<cv::DMatch> matches;
+    cv::Mat img1 = this->colorImages[frame_one];
+    cv::Mat img2 = this->colorImages[frame_two];
+
+    auto matcher = this->correspondenceFinder->matcher;
+
+    auto kpts = this->correspondenceFinder->getKeyPoints();
+
+    auto kpts1 = kpts[frame_one];
+    auto kpts2 = kpts[frame_two];
+
+    for (int i = 0; i < kpts1.size(); ++i) {
+        int obsIndex1 = correspondenceFinder->getObsIndex(frame_one, i);
+
+        if (this->correspondenceFinder->getObsPoint(obsIndex1) != -1) {
+            for (int j = 0; j < kpts2.size(); ++j) {
+                int obsIndex2 = correspondenceFinder->getObsIndex(frame_two, j);
+
+                if (this->correspondenceFinder->getObsPoint(obsIndex1) ==
+                    this->correspondenceFinder->getObsPoint(obsIndex2)) {
+                    matches.push_back(cv::DMatch(i, j, 1.));
+                }
+            }
+        }
+    }
+
+    std::vector<cv::DMatch> match;
+    match.push_back(matches[match_index]);
+    cv::Mat out;
+    cv::drawMatches(img1, kpts1, img2, kpts2, match, out);
+
+    std::string name(fmt::format("Matches between frames {} & {}", frame_one, frame_two));
+    cv::namedWindow(name);
+    cv::imshow(name, out);
+    cv::waitKey(0);
+}
+
 void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) const {
     std::vector<cv::DMatch> matches;
     cv::Mat img1 = this->colorImages[frame_one];
@@ -85,7 +123,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.25},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.2},
                                                                                  {"ransacEps", 1e1}}};
     this->sensor = new VirtualSensor{};
     if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
@@ -214,7 +252,7 @@ void KinectDataloader::setupPointDepth() {
         }
 
         // saving mesh
-        MeshWriter::WriteToPLYFile(fmt::format("frame{}.ply", i), pointsToPrint, colorsToPrint);
+        //MeshWriter::WriteToPLYFile(fmt::format("frame{}.ply", i), pointsToPrint, colorsToPrint);
 
     }
 }
@@ -300,6 +338,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                     if(source_points_indices[j] == target_points_indices[k]) {
                         if(std::isinf(source_points[j](2))) break;
                         if(std::isinf(target_points[k](2))) break;
+                        if(std::isnan(source_points[j](2))) break;
+                        if(std::isnan(target_points[k](2))) break;
 
                         matching_source_points.push_back(source_points[j]);
                         matching_target_points.push_back(target_points[k]);
