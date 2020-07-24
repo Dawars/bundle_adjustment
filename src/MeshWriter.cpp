@@ -80,7 +80,7 @@ void MeshWriter::WritePLYForInits(BundleAdjustment & ba, std::string output_dir)
                 "\nproperty uchar red"
                 "\nproperty uchar green"
                 "\nproperty uchar blue"
-                "\nend_header\n", total_points_in_mesh);
+                "\nend_header\n", total_points_in_mesh + 2);
 
 
         auto cam = ba.getTranslation(0);
