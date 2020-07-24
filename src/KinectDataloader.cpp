@@ -123,13 +123,15 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.2},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.14788},
                                                                                  {"ransacEps", 1e1}}};
     this->sensor = new VirtualSensor{};
     if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
 
     this->intrinsics = sensor->GetColorIntrinsics();
 
+
+    int term = 0;
 //    for (int i = 0; i < 3 && sensor->ProcessNextFrame(); ++i) {
     while (sensor->ProcessNextFrame()) {
         auto color = sensor->GetColor();
@@ -147,6 +149,9 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
         depthImages.push_back(depthFiltered);
 
         correspondenceFinder->extractKeypoints(color);
+
+        term++;
+        if(term==2) break;
     }
 
 

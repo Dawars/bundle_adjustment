@@ -36,7 +36,7 @@ void MeshWriter::WriteToPLYFile(std::string filename, std::vector<Eigen::Vector3
 
 
 void MeshWriter::WritePLYForInits(BundleAdjustment & ba, std::string output_dir) {
-    const int total_frames = ba.dataset->getNumFrames() - 1;
+    const int total_frames = ba.dataset->getNumFrames();
     for(int other_frame_index=1; other_frame_index<total_frames; other_frame_index++) {
 
 
