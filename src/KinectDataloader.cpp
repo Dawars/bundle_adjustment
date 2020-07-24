@@ -130,8 +130,6 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
 
     this->intrinsics = sensor->GetColorIntrinsics();
 
-
-    int term = 0;
 //    for (int i = 0; i < 3 && sensor->ProcessNextFrame(); ++i) {
     while (sensor->ProcessNextFrame()) {
         auto color = sensor->GetColor();
@@ -149,9 +147,6 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
         depthImages.push_back(depthFiltered);
 
         correspondenceFinder->extractKeypoints(color);
-
-        term++;
-        if(term==2) break;
     }
 
 
