@@ -46,6 +46,10 @@ void BundleAdjustment::createProblem() {
             continue;
         }
 
+        if (std::isnan(observations[i].x)) {
+            continue;
+        }
+
         Eigen::Vector3f obs;
         obs << observations[i].x, observations[i].y, 1.f;
 

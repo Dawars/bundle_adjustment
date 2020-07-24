@@ -23,13 +23,13 @@ int main() {
     options.num_threads = 4;
 
     BundleAdjustment ba{data, options};
+    ba.WriteToPLYFile("Test.ply");
     ba.createProblem();
     MeshWriter m;
 
     std::string dir = "init_meshes";
-    m.WritePLYForInits(ba, dir);
 
-    data->visualizeMatch(0,1);
+    //data->visualizeMatch(0,1);
 
     delete data;
 

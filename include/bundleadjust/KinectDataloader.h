@@ -44,6 +44,7 @@ public:
 
     OnlinePointMatcher* correspondenceFinder;
     VirtualSensor* sensor;
+    int num_nans;
 private:
     bool initGroundTruth;
     void setupPointDepth();

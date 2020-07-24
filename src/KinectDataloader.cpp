@@ -123,7 +123,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.14788},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.8},
                                                                                  {"ransacEps", 1e1}}};
     this->sensor = new VirtualSensor{};
     if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
