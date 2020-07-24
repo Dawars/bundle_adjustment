@@ -38,8 +38,6 @@ void MeshWriter::WriteToPLYFile(std::string filename, std::vector<Eigen::Vector3
 void MeshWriter::WritePLYForInits(BundleAdjustment & ba, std::string output_dir) {
     const int total_frames = ba.dataset->getNumFrames();
     for(int other_frame_index=1; other_frame_index<total_frames; other_frame_index++) {
-
-
         auto of = fmt::output_file(output_dir + "/0_to_" + std::to_string(other_frame_index) + ".ply");
 
         int total_points_in_mesh = 0;
@@ -60,12 +58,11 @@ void MeshWriter::WritePLYForInits(BundleAdjustment & ba, std::string output_dir)
                     if(point_index == ba.dataset->getObsPoint(j) && ba.dataset->getObsCam(j) == other_frame_index) {
                         total_points_in_mesh += 1;
                         Eigen::Vector3f p;
-                        Eigen::Vector3i c;
 
                         auto X = ba.getPoint(point_index);
                         p << X[0], X[1], X[2];
 
-                        c = ba.dataset->getPointColor(i);
+                        Eigen::Vector3i c = ba.dataset->getPointColor(point_index);
                         points.push_back(p);
                         colors.push_back(c);
                         break;

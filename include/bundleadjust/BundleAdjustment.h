@@ -27,15 +27,13 @@ public:
 
     Dataloader* dataset;
 
-protected:
-    double *X;
-    double *T;
 private:
     ceres::Solver::Options options;
     ceres::Problem problem;
 
     double *R;
-    
+    double *X;
+    double *T;
     double *intrinsics;
 };
 
