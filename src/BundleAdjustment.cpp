@@ -10,11 +10,14 @@
 
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BAConstraint.h"
+#include "MeshWriterCallback.h"
 
 
 BundleAdjustment::BundleAdjustment(Dataloader *dataset, ceres::Solver::Options options)
         : dataset(dataset),
           options(options) {
+
+    callback = new MeshWriterCallback(this);
 
     R = new double[dataset->getNumFrames() * 3];
     T = new double[dataset->getNumFrames() * 3];
@@ -29,6 +32,8 @@ BundleAdjustment::~BundleAdjustment() {
     delete[] T;
     delete[] X;
     delete[] intrinsics;
+
+    delete callback;
 }
 
 void BundleAdjustment::createProblem() {
@@ -75,6 +80,9 @@ void BundleAdjustment::createProblem() {
 
 void BundleAdjustment::solve() {
     std::cout << "Solving problem" << std::endl;
+
+    options.update_state_every_iteration = true;
+    options.callbacks.push_back(callback);
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);

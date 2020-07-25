@@ -8,6 +8,8 @@
 
 #include "Dataloader.h"
 
+class MeshWriterCallback;
+
 class BundleAdjustment {
 public:
     BundleAdjustment(Dataloader* dataset, ceres::Solver::Options options);
@@ -35,5 +37,6 @@ private:
     double *X;
     double *T;
     double *intrinsics;
+    MeshWriterCallback *callback;
 };
 
