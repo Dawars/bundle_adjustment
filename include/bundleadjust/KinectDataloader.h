@@ -52,6 +52,8 @@ private:
     std::vector<double> x, y, z; // observations in camera space, depth from depth map
 
     float* estimatedPoses;
-    float* getEstimatedPose(int i);
+public:
+    const float* getEstimatedPose(int i) const;
+    void setEstimatedPose(int i, Eigen::Matrix4f mat);
 };
 

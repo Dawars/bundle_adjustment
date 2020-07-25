@@ -288,7 +288,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             fmt::print("Angle: {}\n", r.angle());
 
 
-            Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(i)) = traj;
+            setEstimatedPose(i, traj);
         }
     } else {
         std::vector<Eigen::Vector3f> reference_points;
@@ -311,7 +311,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         for (int frameId = 0; frameId < this->getNumFrames(); frameId++) {
             if (frameId == origin_frame) {
                 std::cout << frameId << ":  " << " The origin frame" << std::endl;
-                Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = Eigen::Matrix4f::Identity();
+                setEstimatedPose(frameId, Eigen::Matrix4f::Identity());
             } else {
                 std::vector<Eigen::Vector3f> source_points;
                 std::vector<int> source_points_indices;
@@ -390,12 +390,12 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 MeshWriter::WriteToPLYFile(fmt::format("procrustes_0_{}.ply", frameId), points, colors);
 */
 
-                Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = estimatedPose;
+                setEstimatedPose(frameId, estimatedPose);
             }
         }
         for (int frameId = 0; frameId < this->getNumFrames(); ++frameId) {
 
-            Eigen::Matrix4f pose = Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId));
+            Eigen::Matrix4f pose = Eigen::Map<const Eigen::Matrix4f>(getEstimatedPose(frameId));
 
         Eigen::Matrix3f rotation_matrix;
         rotation_matrix << pose.block(0, 0, 3, 3);
@@ -428,7 +428,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
         for(int obsIndex : observationsIds) {
             int frameId = getObsCam(obsIndex);
-            pose = Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId));
+            pose = Eigen::Map<const Eigen::Matrix4f>(getEstimatedPose(frameId));
             point << x[obsIndex], y[obsIndex], z[obsIndex], 1;
 
             fmt::print("Point {0} with obs {1} in frame {2}: {3:.4f} {4:.4f} {5:.4f} {6:.4f}\n", i, obsIndex, frameId, point(0), point(1), point(2), point(3));
@@ -498,8 +498,29 @@ Eigen::Vector3i KinectDataloader::getPointColor(int point_index) const {
     return rgb_vector;
 }
 
-float* KinectDataloader::getEstimatedPose(int i) {
+const float* KinectDataloader::getEstimatedPose(int i) const {
     return &estimatedPoses[16*i];
+}
+void KinectDataloader::setEstimatedPose(int i, Eigen::Matrix4f mat){
+    auto* pose = &estimatedPoses[16*i];
+// column major
+    pose[0] = mat(0,0);
+    pose[1] = mat(1,0);
+    pose[2] = mat(2,0);
+    pose[3] = mat(3,0);
+    pose[4] = mat(0,1);
+    pose[5] = mat(1,1);
+    pose[6] = mat(2,1);
+    pose[7] = mat(3,1);
+    pose[8] = mat( 0,2);
+    pose[9] = mat( 1,2);
+    pose[10] = mat(2,2);
+    pose[11] = mat(3,2);
+    pose[12] = mat(0,3);
+    pose[13] = mat(1,3);
+    pose[14] = mat(2,3);
+    pose[15] = mat(3,3);
+
 }
 
 
