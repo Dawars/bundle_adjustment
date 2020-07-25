@@ -31,6 +31,44 @@ void visualize(cv::Mat image, std::vector<cv::KeyPoint> featurePoints) {
     cv::waitKey(0);
 }
 
+void KinectDataloader::visualizePointMatch(const int frame_one, const int frame_two, const int point_index, const int match_index) const {
+    std::vector<cv::DMatch> matches;
+    cv::Mat img1 = this->colorImages[frame_one];
+    cv::Mat img2 = this->colorImages[frame_two];
+
+    auto matcher = this->correspondenceFinder->matcher;
+
+    auto kpts = this->correspondenceFinder->getKeyPoints();
+
+    auto kpts1 = kpts[frame_one];
+    auto kpts2 = kpts[frame_two];
+
+    for (int i = 0; i < kpts1.size(); ++i) {
+        int obsIndex1 = correspondenceFinder->getObsIndex(frame_one, i);
+
+        if (this->correspondenceFinder->getObsPoint(obsIndex1) != -1) {
+            for (int j = 0; j < kpts2.size(); ++j) {
+                int obsIndex2 = correspondenceFinder->getObsIndex(frame_two, j);
+
+                if (this->correspondenceFinder->getObsPoint(obsIndex1) ==
+                    this->correspondenceFinder->getObsPoint(obsIndex2)) {
+                    matches.push_back(cv::DMatch(i, j, 1.));
+                }
+            }
+        }
+    }
+
+    std::vector<cv::DMatch> match;
+    match.push_back(matches[match_index]);
+    cv::Mat out;
+    cv::drawMatches(img1, kpts1, img2, kpts2, match, out);
+
+    std::string name(fmt::format("Matches between frames {} & {}", frame_one, frame_two));
+    cv::namedWindow(name);
+    cv::imshow(name, out);
+    cv::waitKey(0);
+}
+
 void KinectDataloader::visualizeMatch(const int frame_one, const int frame_two) const {
     std::vector<cv::DMatch> matches;
     cv::Mat img1 = this->colorImages[frame_one];
@@ -85,7 +123,7 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.25},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.8},
                                                                                  {"ransacEps", 1e1}}};
     this->sensor = new VirtualSensor{};
     if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
@@ -214,7 +252,7 @@ void KinectDataloader::setupPointDepth() {
         }
 
         // saving mesh
-        MeshWriter::WriteToPLYFile(fmt::format("frame{}.ply", i), pointsToPrint, colorsToPrint);
+        //MeshWriter::WriteToPLYFile(fmt::format("frame{}.ply", i), pointsToPrint, colorsToPrint);
 
     }
 }
@@ -253,8 +291,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
             Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(i)) = traj;
         }
     } else {
-        std::vector<Eigen::Vector3f> source_points;
-        std::vector<int> source_points_indices;
+        std::vector<Eigen::Vector3f> reference_points;
+        std::vector<int> reference_points_indices;
 
     // Get all the key points from the origin frame coords (x,y,z) and point index
 
@@ -265,8 +303,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
         Eigen::Vector3f p;
         p << x[obsIndex], y[obsIndex], z[obsIndex];
-        source_points.push_back(p);
-        source_points_indices.push_back(pointIndex);
+        reference_points.push_back(p);
+        reference_points_indices.push_back(pointIndex);
     }
 
         ProcrustesAligner aligner;
@@ -275,8 +313,8 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 std::cout << frameId << ":  " << " The origin frame" << std::endl;
                 Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = Eigen::Matrix4f::Identity();
             } else {
-                std::vector<Eigen::Vector3f> target_points;
-                std::vector<int> target_points_indices;
+                std::vector<Eigen::Vector3f> source_points;
+                std::vector<int> source_points_indices;
 
             // todo compare to prev frame
 
@@ -288,36 +326,70 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
                 Eigen::Vector3f p;
                 p << x[obsIndex], y[obsIndex], z[obsIndex];
-                target_points.push_back(p);
-                target_points_indices.push_back(pointIndex);
+                source_points.push_back(p);
+                source_points_indices.push_back(pointIndex);
             }
 
             // remove all the key points that aren't in both vectors and exclude points with negative infinity depth
+            std::vector<Eigen::Vector3f> matching_reference_points;
             std::vector<Eigen::Vector3f> matching_source_points;
-            std::vector<Eigen::Vector3f> matching_target_points;
-            for(int j=0; j<source_points.size(); j++) {
-                for(int k=0; k<target_points.size(); k++) {
-                    if(source_points_indices[j] == target_points_indices[k]) {
-                        if(std::isinf(source_points[j](2))) break;
-                        if(std::isinf(target_points[k](2))) break;
+            for(int j=0; j<reference_points.size(); j++) {
+                for(int k=0; k<source_points.size(); k++) {
+                    if(reference_points_indices[j] == source_points_indices[k]) {
+                        if(std::isinf(reference_points[j](2))) break;
+                        if(std::isinf(source_points[k](2))) break;
+                        if(std::isnan(reference_points[j](2))) break;
+                        if(std::isnan(source_points[k](2))) break;
 
-                        matching_source_points.push_back(source_points[j]);
-                        matching_target_points.push_back(target_points[k]);
+                        matching_reference_points.push_back(reference_points[j]);
+                        matching_source_points.push_back(source_points[k]);
 
-                        //std::cout << source_points[j](0) << " " << source_points[j](1) << " " << source_points[j](2) << "\n\n";
+                        //std::cout << reference_points[j](0) << " " << reference_points[j](1) << " " << reference_points[j](2) << "\n\n";
 
                         break;
                     }
                 }
             }
 
-            // for(int i=0; i++<target_points_indices.size(); i++) {
-            //     std::cout << "Index:  " << target_points_indices[i] << std::endl;
+            // for(int i=0; i++<source_points_indices.size(); i++) {
+            //     std::cout << "Index:  " << source_points_indices[i] << std::endl;
             // }
 
-            //std::cout << frameId << ":  " << matching_target_points.size() << " points" << std::endl;
+            //std::cout << frameId << ":  " << matching_source_points.size() << " points" << std::endl;
 
-                Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_target_points, matching_source_points);
+                // estimatedPose transforms source -> reference
+                Eigen::Matrix4f estimatedPose = aligner.estimatePose(matching_source_points, matching_reference_points);
+
+                // visualize match
+/*
+
+                std::vector<Eigen::Vector3f> points;
+                std::vector<Eigen::Vector3i> colors;
+                Eigen::Vector3i red;
+                red << 255,0,0;
+                Eigen::Vector3i green;
+                green << 0, 255, 0;
+                Eigen::Vector3i blue;
+                green << 0,0, 255;
+                for(auto &point : matching_reference_points) {
+                    points.push_back(point);
+                    colors.push_back(red);
+                }
+                for(auto &point : matching_source_points) {
+                    points.push_back(point);
+                    colors.push_back(blue);
+                }
+                for(auto &point : matching_source_points) {
+                    Eigen::Vector4f p;
+                    p << point, 1;
+                    auto res = (estimatedPose*p) ;
+                    points.push_back((res.head<3>().array()+ 0.00001f).matrix());
+                    colors.push_back(green);
+                }
+
+                MeshWriter::WriteToPLYFile(fmt::format("procrustes_0_{}.ply", frameId), points, colors);
+*/
+
                 Eigen::Map<Eigen::Matrix4f>(getEstimatedPose(frameId)) = estimatedPose;
             }
         }

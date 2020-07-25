@@ -40,9 +40,11 @@ public:
     void initialize(double* R, double* T, double* intrinsics, double* X) override;
     
     void visualizeMatch(const int frame_one, const int frame_two) const;
+    void visualizePointMatch(const int frame_one, const int frame_two, const int point_index, const int match_index) const;
 
     OnlinePointMatcher* correspondenceFinder;
     VirtualSensor* sensor;
+    int num_nans;
 private:
     bool initGroundTruth;
     void setupPointDepth();

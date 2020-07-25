@@ -24,14 +24,16 @@ public:
     void projectFrom3D(int cam_id);
     void writeMesh(std::string filename);
     void WriteToPLYFile(std::string filename);
-private:
+
     Dataloader* dataset;
+
+private:
     ceres::Solver::Options options;
     ceres::Problem problem;
 
     double *R;
-    double *T;
     double *X;
+    double *T;
     double *intrinsics;
 };
 

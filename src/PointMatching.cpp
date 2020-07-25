@@ -27,7 +27,6 @@ void OnlinePointMatcher::extractKeypoints(const cv::Mat currentFrame) {
     Mat current_frame_descriptors;
     detector->detect(currentFrame, current_frame_keypoints);
     extractor->compute(currentFrame, current_frame_keypoints, current_frame_descriptors);
-
     this->keypoints.push_back(current_frame_keypoints);
     this->descriptors.push_back(current_frame_descriptors);
 
