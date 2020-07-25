@@ -130,7 +130,11 @@ void BundleAdjustment::WriteToPLYFile(std::string filename) {
     for (int i = 0; i < this->dataset->getNumPoints(); ++i) {
         auto point = getPoint(i);
         Eigen::Vector3i bgr = this->dataset->getPointColor(i);
-        of.print("{0:.4f} {1:.4f} {2:.4f} {3} {4} {5}\n", point[0], point[1], point[2], bgr(0), bgr(1), bgr(2));
+        if(!std::isnan(point[0])){
+            of.print("{0:.4f} {1:.4f} {2:.4f} {3} {4} {5}\n", point[0], point[1], point[2], bgr(0), bgr(1), bgr(2));
+        } else {
+            of.print("0 0 0 {} {} {}\n", bgr(0), bgr(1), bgr(2));
+        }
     }
     of.close();
 }
