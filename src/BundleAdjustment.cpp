@@ -92,22 +92,6 @@ void BundleAdjustment::solve() {
     std::cout << "Solving problem end" << std::endl;
 }
 
-
-void BundleAdjustment::writeMesh(std::string filename) {
-
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        file << "OFF" << std::endl;
-        file << dataset->getNumPoints() << " 0 0" << std::endl;
-
-        for (int i = 0; i < dataset->getNumPoints(); ++i) {
-            auto point = getPoint(i);
-
-            file << point[0] << " " << point[1] << " " << point[2] << std::endl;
-        }
-    }
-}
-
 double *BundleAdjustment::getRotation(size_t cameraIndex) {
     return &R[cameraIndex * 3];
 }
