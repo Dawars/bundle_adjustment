@@ -8,6 +8,8 @@
 
 #include "Dataloader.h"
 
+class MeshWriterCallback;
+
 class BundleAdjustment {
 public:
     BundleAdjustment(Dataloader* dataset, ceres::Solver::Options options);
@@ -21,8 +23,6 @@ public:
     double* getIntrinsics(size_t cameraIndex);
     double* getPoint(size_t pointIndex);
 
-    void projectFrom3D(int cam_id);
-    void writeMesh(std::string filename);
     void WriteToPLYFile(std::string filename);
 
     Dataloader* dataset;
@@ -35,5 +35,6 @@ private:
     double *X;
     double *T;
     double *intrinsics;
+    MeshWriterCallback *callback;
 };
 

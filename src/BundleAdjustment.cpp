@@ -10,11 +10,14 @@
 
 #include "bundleadjust/BundleAdjustment.h"
 #include "bundleadjust/BAConstraint.h"
+#include "MeshWriterCallback.h"
 
 
 BundleAdjustment::BundleAdjustment(Dataloader *dataset, ceres::Solver::Options options)
         : dataset(dataset),
           options(options) {
+
+    callback = new MeshWriterCallback(this);
 
     R = new double[dataset->getNumFrames() * 3];
     T = new double[dataset->getNumFrames() * 3];
@@ -29,6 +32,8 @@ BundleAdjustment::~BundleAdjustment() {
     delete[] T;
     delete[] X;
     delete[] intrinsics;
+
+    delete callback;
 }
 
 void BundleAdjustment::createProblem() {
@@ -76,28 +81,15 @@ void BundleAdjustment::createProblem() {
 void BundleAdjustment::solve() {
     std::cout << "Solving problem" << std::endl;
 
+    options.update_state_every_iteration = true;
+    options.callbacks.push_back(callback);
+
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << ceres::LinearSolverTypeToString(options.linear_solver_type) << std::endl;
     std::cout << summary.FullReport() << std::endl;
 
     std::cout << "Solving problem end" << std::endl;
-}
-
-
-void BundleAdjustment::writeMesh(std::string filename) {
-
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        file << "OFF" << std::endl;
-        file << dataset->getNumPoints() << " 0 0" << std::endl;
-
-        for (int i = 0; i < dataset->getNumPoints(); ++i) {
-            auto point = getPoint(i);
-
-            file << point[0] << " " << point[1] << " " << point[2] << std::endl;
-        }
-    }
 }
 
 double *BundleAdjustment::getRotation(size_t cameraIndex) {
@@ -138,7 +130,11 @@ void BundleAdjustment::WriteToPLYFile(std::string filename) {
     for (int i = 0; i < this->dataset->getNumPoints(); ++i) {
         auto point = getPoint(i);
         Eigen::Vector3i bgr = this->dataset->getPointColor(i);
-        of.print("{0:.4f} {1:.4f} {2:.4f} {3} {4} {5}\n", point[0], point[1], point[2], bgr(0), bgr(1), bgr(2));
+        if(!std::isnan(point[0])){
+            of.print("{0:.4f} {1:.4f} {2:.4f} {3} {4} {5}\n", point[0], point[1], point[2], bgr(0), bgr(1), bgr(2));
+        } else {
+            of.print("0 0 0 {} {} {}\n", bgr(0), bgr(1), bgr(2));
+        }
     }
     of.close();
 }

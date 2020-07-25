@@ -158,7 +158,7 @@ std::vector<cv::Point2f> OnlinePointMatcher::getObservations() const {
 }
 cv::Point2f OnlinePointMatcher::getObservation(int index) const {
     for (int frameId = 0; frameId < getNumFrames(); ++frameId) {
-        if(index - totalPointsUntilFrame[frameId] <= 0){
+        if(index - totalPointsUntilFrame[frameId] < 0){
             return keypoints[frameId-1][index - totalPointsUntilFrame[frameId-1]].pt;
         }
     }

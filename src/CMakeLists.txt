@@ -17,7 +17,9 @@ add_library(BundleAdjustment ${HEADER_LIST}
         detector/SiftDetector.cpp
         PointMatching.cpp
         ../include/bundleadjust/Dataloader.h
-        MeshWriter.cpp)
+        MeshWriter.cpp
+        MeshWriterCallback.h
+        )
 target_compile_features(BundleAdjustment PRIVATE cxx_std_17)
 
 target_include_directories(BundleAdjustment PUBLIC ../include)
