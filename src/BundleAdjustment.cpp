@@ -55,10 +55,16 @@ void BundleAdjustment::createProblem() {
             continue;
         }
 
+        if (std::isnan(getPoint(pointIndex)[0])) {
+            continue;
+        }
+        
+
         Eigen::Vector3f obs;
         obs << observations[i].x, observations[i].y, 1.f;
 
-        auto cost_function = BAConstraint::create(obs);
+        const float * estPose = dataset->getEstimatedPose(camIndex);
+        auto cost_function = BAConstraint::create(obs, estPose);
         problem.AddResidualBlock(cost_function,
                                  nullptr /* squared loss */,
                                  getPoint(pointIndex),
@@ -69,7 +75,12 @@ void BundleAdjustment::createProblem() {
 
         // adding cam intrinsics as fixed vars
         problem.SetParameterBlockConstant(getIntrinsics(camIndex));
+        // problem.SetParameterBlockConstant(getTranslation(camIndex));
+        problem.SetParameterBlockConstant(getRotation(camIndex));
 
+        BAConstraint t(obs,estPose);
+        
+        t.printOp(getPoint(pointIndex), getRotation(camIndex), getTranslation(camIndex), getIntrinsics(camIndex), estPose);
         // todo group params http://ceres-solver.org/nnls_solving.html#parameterblockordering
 
     }

@@ -22,6 +22,8 @@ public:
     inline virtual cv::Mat getColor(int frameId) const = 0;
     inline virtual cv::Mat getDepth(int frameId) const = 0;
     virtual void initialize(double* R, double* T, double* intrinsics, double* X) = 0;
+
+    inline virtual const float* getEstimatedPose(int index) const = 0;
 };
 
 inline Dataloader::~Dataloader(){}

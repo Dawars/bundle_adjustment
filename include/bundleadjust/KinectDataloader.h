@@ -25,6 +25,7 @@ public:
 
     inline int getObsCam(int index) const override;
     inline int getObsPoint(int index) const override;
+    const float* getEstimatedPose(int i) const override;
     inline int getNumPoints() const override;
     inline std::vector<cv::Point2f> getObservations() const override;
     inline int getNumObservations() const override;
@@ -45,15 +46,16 @@ public:
     OnlinePointMatcher* correspondenceFinder;
     VirtualSensor* sensor;
     int num_nans;
+    float* estimatedPoses;
 private:
     bool initGroundTruth;
     void setupPointDepth();
     Eigen::Matrix3f intrinsics; // fx, fy, ox, oy
     std::vector<double> x, y, z; // observations in camera space, depth from depth map
 
-    float* estimatedPoses;
+    
 public:
-    const float* getEstimatedPose(int i) const;
+    
     void setEstimatedPose(int i, Eigen::Matrix4f mat);
 };
 

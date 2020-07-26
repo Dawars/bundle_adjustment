@@ -15,7 +15,7 @@ int main(){
 
 
 
-    auto solvers = {ceres::SPARSE_NORMAL_CHOLESKY, ceres::DENSE_SCHUR, ceres::SPARSE_SCHUR, ceres::ITERATIVE_SCHUR, ceres::CGNR};
+    auto solvers = {ceres::SPARSE_NORMAL_CHOLESKY};
     for (auto & solver : solvers) {
         ceres::Solver::Options options;
 
@@ -23,13 +23,14 @@ int main(){
         options.use_nonmonotonic_steps = false;
         options.linear_solver_type = solver;
         options.minimizer_progress_to_stdout = true;
-        options.max_num_iterations = 600;
+        options.max_num_iterations = 80;
         options.num_threads = 4;
 
         BundleAdjustment ba{data, options};
 
         ba.createProblem();
         ba.solve();
+        ba.WriteToPLYFile("constrainTransReal.ply");
     }
 
 //
