@@ -84,6 +84,12 @@ void BundleAdjustment::createProblem() {
         // todo group params http://ceres-solver.org/nnls_solving.html#parameterblockordering
 
     }
+    // fix 1st camera as reference
+    problem.SetParameterBlockConstant(getIntrinsics(0));
+    problem.SetParameterBlockConstant(getTranslation(0));
+    problem.SetParameterBlockConstant(getRotation(0));
+
+
     std::cout << "Invalid observations: " << invalidObs << " out of " << dataset->getNumObservations() << std::endl;
     std::cout << "Creating problem end" << std::endl;
 
