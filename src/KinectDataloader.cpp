@@ -397,9 +397,9 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
 
             Eigen::Matrix4f pose = Eigen::Map<const Eigen::Matrix4f>(getEstimatedPose(frameId));
 
-        Eigen::Matrix3f rotation_matrix;
-        rotation_matrix << pose.block(0, 0, 3, 3);
-        Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
+            Eigen::Matrix3f rotation_matrix;
+            rotation_matrix << pose.block(0, 0, 3, 3);
+            Eigen::AngleAxis<float> r = Eigen::AngleAxis<float>(rotation_matrix);
 
             // todo multiply with prev camera pose
             if (frameId == origin_frame) {

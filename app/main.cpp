@@ -12,6 +12,7 @@ int main(){
     
     
     KinectDataloader* data = new KinectDataloader("/home/andrew/repos/tum/bundle_adjustment/data/rgbd_dataset_freiburg1_xyz/");
+//    BalDataloader* data = new BalDataloader("/Users/dawars/Documents/university/master/TUM/1st_semester/3d_scanning/group_project/bundle_adjustment/libs/ceres-solver/data/problem-16-22106-pre.txt");
 
 
 

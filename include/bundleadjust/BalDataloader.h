@@ -58,6 +58,8 @@ public:
     inline int getNumObservations() const override;
     inline int getNumFrames() const override;
 
+    Eigen::Vector3i getPointColor(int point_index) const override;
+
     inline bool isColorAvailable() const override;
     inline bool isDepthAvailable() const override;
 
