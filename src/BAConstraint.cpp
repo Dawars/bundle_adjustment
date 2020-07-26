@@ -35,10 +35,12 @@ bool BAConstraint::operator()(const T *const point, const T *const rot, const T 
     ceres::AngleAxisToRotationMatrix<T>(rot, R);
 
 
+    Eigen::Map<const Eigen::Matrix3<T>>rotation_matrix(R);
     Eigen::Matrix<T, 4, 4> extr;
-    extr << T(R[0]), T(R[1]), T(R[2]), T(tr[0]),
-            T(R[3]), T(R[4]), T(R[5]), T(tr[1]),
-            T(R[6]), T(R[7]), T(R[8]), T(tr[2]),
+
+    extr << T(rotation_matrix(0,0)), T(rotation_matrix(0,1)), T(rotation_matrix(0,2)), T(tr[0]),
+            T(rotation_matrix(1,0)), T(rotation_matrix(1,1)), T(rotation_matrix(1,2)), T(tr[1]),
+            T(rotation_matrix(2,0)), T(rotation_matrix(2,1)), T(rotation_matrix(2,2)), T(tr[2]),
             T(0), T(0), T(0), T(1);
 
     const Eigen::Matrix4<T> extrInv = extr.inverse();
@@ -128,8 +130,6 @@ ceres::CostFunction *BAConstraint::create(const Eigen::Vector3f &observation, co
 
 bool BAConstraint::printOp(double * point, double * rot, double * tr, double * intrinsics, const float * estimatedPose) const {
     // http://ceres-solver.org/nnls_tutorial.html#bundle-adjustment
-    Eigen::Map<const Eigen::Matrix<double, 3, 1> > t(tr);
-
     double fx = intrinsics[0];
     double fy = intrinsics[1];
     double ox = intrinsics[2];
@@ -137,49 +137,67 @@ bool BAConstraint::printOp(double * point, double * rot, double * tr, double * i
     double k1 = intrinsics[4];
     double k2 = intrinsics[5];
 
-    Eigen::Matrix3f intr;
+    Eigen::Matrix3<double> intr;
     intr << fx, 0, ox,
             0, fy, oy,
             0, 0, 1;
 
-
-
-    Eigen::Matrix4f pose = Eigen::Map<const Eigen::Matrix4f>(estimatedPose);
-    Eigen::Matrix4f poseInv = pose.inverse();
-    Eigen::Vector4f point_hom;
-    point_hom << point[0], point[1], point[2], 1;
-    Eigen::Vector4f cam_point = poseInv * point_hom;
-    Eigen::Vector3f cam3;
-    cam3 << cam_point(0), cam_point(1), cam_point(2);
-
-    
     double p[3];
-    ceres::AngleAxisRotatePoint(rot, point, p);
-    Eigen::Map<const Eigen::Matrix<double, 3, 1> > Prot(p);
-    Eigen::Vector3<double> Pcam = Prot + t;
 
-    Eigen::Vector3f imP = intr*cam3;
-    //imP = imP / imP(2);
+    double R[9];
+    ceres::AngleAxisToRotationMatrix<double>(rot, R);
+
+
+    Eigen::Matrix<double, 4, 4> extr;
+    Eigen::Map<const Eigen::Matrix3<double>>rotation_matrix(R);
+
+    extr << rotation_matrix(0,0), rotation_matrix(0,1), rotation_matrix(0,2), tr[0],
+            rotation_matrix(1,0), rotation_matrix(1,1), rotation_matrix(1,2), tr[1],
+            rotation_matrix(2,0), rotation_matrix(2,1), rotation_matrix(2,2), tr[2],
+            0, 0, 0, 1;
+//     extr << R[0], R[1], R[2], tr[0],
+//             R[3], R[4], R[5], tr[1],
+//             R[6], R[7], R[8], tr[2],
+//             0, 0, 0, 1;
+
+
+//     extr << estimatedPose[0], estimatedPose[1], estimatedPose[2], estimatedPose[3],
+//             estimatedPose[4], estimatedPose[5], estimatedPose[6], estimatedPose[7],
+//             estimatedPose[8], estimatedPose[9], estimatedPose[10], estimatedPose[0],
+//             0, 0, 0, 1;
+
+    const Eigen::Matrix4<double> extrInv = extr.inverse();
+
+
+
+    //ceres::AngleAxisRotatePoint(rot, point, p);
+
+    Eigen::Matrix<double, 4, 1> homogenous_world_point;
+    homogenous_world_point << point[0],
+                              point[1], 
+                              point[2], 
+                              1;
+    Eigen::Matrix<double, 4, 1> cam_point = extrInv * homogenous_world_point;
+
+
+
+    //Eigen::Map<const Eigen::Matrix<T, 3, 1> > Prot(p);
+    Eigen::Vector3<double> Pcam;
+    Pcam << cam_point(0,0), cam_point(1,0), cam_point(2,0);    
 
     // todo unify camera model, signed
-
-        
-    Eigen::Vector3f Pimg;
-    Pcam(0) = Pcam(0)/Pcam(2); // z division, minus because of camera model in BAL
-    Pcam(1) = Pcam(1)/Pcam(2);
+    Eigen::Vector3<double> Pimg;
+    Pimg(0) = Pcam(0) / Pcam(2); // z division, minus because of camera model in BAL
+    Pimg(1) = Pcam(1) / Pcam(2);
     double r2 = Pimg.topRows(2).squaredNorm();
     double d = 1 + r2 * (k1 + r2 * k2);
 
-    Eigen::Vector3f Pproj = intr * Pimg;
-
-    imP(0) = imP(0)/imP(2);
-    imP(1) = imP(1)/imP(2);
-    std::cout << "Pproj: " << imP(0) << " " << imP(1) << "\n";
+    
+    Eigen::Vector3<double> Pproj = intr * Pimg;
+    std::cout << "Proj: " << Pimg(0) << " " << Pimg(1) << "\n";
     std::cout << "Obs: " << observation(0) << " " << observation(1) << "\n";
+    Eigen::Vector3<double> res = observation.cast<double>() - Pproj;
 
-
-    Eigen::Vector3f res;
-    res<< observation(0) - Pproj(0), observation(1) - Pproj(1), 1;
 
 
     return true;
