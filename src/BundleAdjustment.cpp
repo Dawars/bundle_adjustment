@@ -17,7 +17,7 @@ BundleAdjustment::BundleAdjustment(Dataloader *dataset, ceres::Solver::Options o
         : dataset(dataset),
           options(options) {
 
-    callback = new MeshWriterCallback(this);
+    callback = new MeshWriterCallback(this, ceres::LinearSolverTypeToString(options.linear_solver_type));
 
     R = new double[dataset->getNumFrames() * 3];
     T = new double[dataset->getNumFrames() * 3];
@@ -80,6 +80,9 @@ void BundleAdjustment::createProblem() {
 
 void BundleAdjustment::solve() {
     std::cout << "Solving problem" << std::endl;
+    ceres::IterationSummary sum;
+    sum.iteration = -1;
+    (*callback)(sum);
 
     options.update_state_every_iteration = true;
     options.callbacks.push_back(callback);

@@ -10,13 +10,13 @@
 
 class MeshWriterCallback : public ceres::IterationCallback {
 public:
-    explicit MeshWriterCallback(BundleAdjustment* ba):ba(ba){}
+    explicit MeshWriterCallback(BundleAdjustment* ba, std::string prefix):ba(ba), prefix(prefix){}
 
     ~MeshWriterCallback() {}
 
     ceres::CallbackReturnType operator()(const ceres::IterationSummary &summary) {
-        if(summary.iteration % 5 == 0) {
-            ba->WriteToPLYFile(fmt::format("mesh_{}.ply", summary.iteration));
+        if(summary.iteration % 1 == 0) {
+            ba->WriteToPLYFile(fmt::format("mesh_{}_{}.ply", prefix, summary.iteration));
 //            fmt::print("Saving iteration {}\n", summary.iteration);
         }
         return ceres::SOLVER_CONTINUE;
@@ -24,4 +24,5 @@ public:
 
 private:
     BundleAdjustment* ba;
+    std::string prefix;
 };

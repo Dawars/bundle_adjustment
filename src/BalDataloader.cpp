@@ -108,15 +108,38 @@ cv::Mat BalDataloader::getDepth(int frameId) const {
     return cv::Mat();
 }
 
+// Return a random number sampled from a uniform distribution in the range
+// [0,1].
+inline double RandDouble() {
+    double r = static_cast<double>(rand());
+    return r / RAND_MAX;
+}
+
+// Marsaglia Polar method for generation standard normal (pseudo)
+// random numbers http://en.wikipedia.org/wiki/Marsaglia_polar_method
+inline double RandNormal() {
+    double x1, x2, w;
+    do {
+        x1 = 2.0 * RandDouble() - 1.0;
+        x2 = 2.0 * RandDouble() - 1.0;
+        w = x1 * x1 + x2 * x2;
+    } while ( w >= 1.0 || w == 0.0 );
+
+    w = sqrt((-2.0 * log(w)) / w);
+    return x1 * w;
+}
 void BalDataloader::initialize(double *R, double *T, double *intrinsics, double *X) {
+    double sigmaCam = 0.01;
+    double sigmaX = 2;
+
     for (int i = 0; i < num_camera; ++i) {
         auto &cam = cameras[i];
-        R[3 * i + 0] = cam.R[0];
-        R[3 * i + 1] = cam.R[1];
-        R[3 * i + 2] = cam.R[2];
-        T[3 * i + 0] = cam.t[0];
-        T[3 * i + 1] = cam.t[1];
-        T[3 * i + 2] = cam.t[2];
+        R[3 * i + 0] = cam.R[0] + RandNormal() * sigmaCam;
+        R[3 * i + 1] = cam.R[1] + RandNormal() * sigmaCam;
+        R[3 * i + 2] = cam.R[2] + RandNormal() * sigmaCam;
+        T[3 * i + 0] = cam.t[0] + RandNormal() * sigmaCam;
+        T[3 * i + 1] = cam.t[1] + RandNormal() * sigmaCam;
+        T[3 * i + 2] = cam.t[2] + RandNormal() * sigmaCam;
         intrinsics[6 * i + 0] = cam.f; // fx
         intrinsics[6 * i + 1] = cam.f; // fy
         intrinsics[6 * i + 2] = 0; // ox
@@ -127,8 +150,14 @@ void BalDataloader::initialize(double *R, double *T, double *intrinsics, double 
 
     for (int i = 0; i < num_points; ++i) {
         auto & pt = points[i];
-        X[3*i + 0] = std::get<0>(pt);
-        X[3*i + 1] = std::get<1>(pt);
-        X[3*i + 2] = std::get<2>(pt);
+        X[3*i + 0] = std::get<0>(pt) + RandNormal() * sigmaX;
+        X[3*i + 1] = std::get<1>(pt) + RandNormal() * sigmaX;
+        X[3*i + 2] = std::get<2>(pt) + RandNormal() * sigmaX;
     }
+}
+
+Eigen::Vector3i BalDataloader::getPointColor(int point_index) const {
+    Eigen::Vector3i color;
+    color.setConstant(255);
+    return color;
 }
