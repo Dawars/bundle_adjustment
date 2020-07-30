@@ -123,13 +123,14 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
     auto extractor = cv::SIFT::create();
     auto matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
 
-    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.8},
+    correspondenceFinder = new OnlinePointMatcher{detector, extractor, matcher, {{"ratioThreshold", 0.6},
                                                                                  {"ransacEps", 1e1}}};
     this->sensor = new VirtualSensor{};
     if(!sensor->Init(datasetDir)) { throw std::invalid_argument("Kinect dataset could not be loaded");}
 
     this->intrinsics = sensor->GetColorIntrinsics();
 
+    int term = 0;
 //    for (int i = 0; i < 3 && sensor->ProcessNextFrame(); ++i) {
     while (sensor->ProcessNextFrame()) {
         auto color = sensor->GetColor();
@@ -147,6 +148,8 @@ KinectDataloader::KinectDataloader(const std::string &datasetDir, bool initGroun
         depthImages.push_back(depthFiltered);
 
         correspondenceFinder->extractKeypoints(color);
+        term++;
+        // if(term==4) break;
     }
 
 
@@ -170,6 +173,7 @@ int KinectDataloader::getObsCam(int index) const {
 int KinectDataloader::getObsPoint(int index) const {
     return this->correspondenceFinder->getObsPoint(index);
 }
+
 
 int KinectDataloader::getNumPoints() const {
     return this->correspondenceFinder->getNumPoints();
@@ -294,18 +298,18 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
         std::vector<Eigen::Vector3f> reference_points;
         std::vector<int> reference_points_indices;
 
-    // Get all the key points from the origin frame coords (x,y,z) and point index
+        // Get all the key points from the origin frame coords (x,y,z) and point index
 
-    for (int obsIndex : correspondenceFinder->getCamObs(origin_frame)) {
-        int pointIndex = correspondenceFinder->getObsPoint(obsIndex);
+        for (int obsIndex : correspondenceFinder->getCamObs(origin_frame)) {
+            int pointIndex = correspondenceFinder->getObsPoint(obsIndex);
 
-        if(pointIndex == -1) { continue; }
+            if(pointIndex == -1) { continue; }
 
-        Eigen::Vector3f p;
-        p << x[obsIndex], y[obsIndex], z[obsIndex];
-        reference_points.push_back(p);
-        reference_points_indices.push_back(pointIndex);
-    }
+            Eigen::Vector3f p;
+            p << x[obsIndex], y[obsIndex], z[obsIndex];
+            reference_points.push_back(p);
+            reference_points_indices.push_back(pointIndex);
+        }
 
         ProcrustesAligner aligner;
         for (int frameId = 0; frameId < this->getNumFrames(); frameId++) {
@@ -370,7 +374,7 @@ void KinectDataloader::initialize(double *R, double *T, double *intrinsics, doub
                 Eigen::Vector3i green;
                 green << 0, 255, 0;
                 Eigen::Vector3i blue;
-                green << 0,0, 255;
+                blue << 0,0, 255;
                 for(auto &point : matching_reference_points) {
                     points.push_back(point);
                     colors.push_back(red);
